@@ -1,0 +1,375 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Organization {
+  organizationId   Int                @id @default(autoincrement())
+  name             String             @db.VarChar(200)
+  type             OrganizationType
+  email            String?            @db.VarChar(100)
+  phone            String?            @db.VarChar(20)
+  address          String?
+  isActive         Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  Booking          Booking[]
+  Building         Building[]
+  Department       Department[]
+  Resource         Resource[]
+  ResourceCategory ResourceCategory[]
+  User             User[]
+}
+
+model User {
+  id                  Int                   @id @default(autoincrement())
+  organizationId      Int
+  departmentId        Int?
+  name                String                @db.VarChar(100)
+  email               String                @unique @db.VarChar(100)
+  password            String                @db.VarChar(255)
+  image               String?
+  phone               String?               @db.VarChar(20)
+  role                Role                  @default(USER)
+  isActive            Boolean               @default(true)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  accounts            Account[]
+  sessions            Session[]
+
+  Booking             Booking[]
+  BookingApproval     BookingApproval[]
+  MaintenanceLog      MaintenanceLog[]
+  MaintenanceSchedule MaintenanceSchedule[]
+  Notification        Notification[]
+  Department          Department?           @relation(fields: [departmentId], references: [departmentId])
+  Organization        Organization          @relation(fields: [organizationId], references: [organizationId])
+  auditLogs           AuditLog[]
+}
+
+model Department {
+  departmentId   Int          @id @default(autoincrement())
+  organizationId Int
+  name           String       @db.VarChar(100)
+  headUserId     Int?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+
+  Organization   Organization @relation(fields: [organizationId], references: [organizationId])
+  User           User[]
+}
+
+model Building {
+  buildingId     Int          @id @default(autoincrement())
+  organizationId Int
+  name           String       @db.VarChar(100)
+  address        String?
+  totalFloors    Int?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  
+  Organization   Organization @relation(fields: [organizationId], references: [organizationId])
+  Resource       Resource[]
+}
+
+model ResourceCategory {
+  categoryId     Int          @id @default(autoincrement())
+  organizationId Int
+  name           String       @db.VarChar(100)
+  description    String?
+  icon           String?      @db.VarChar(100)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+
+  Resource       Resource[]
+  Organization   Organization @relation(fields: [organizationId], references: [organizationId])
+}
+
+model Resource {
+  resourceId           Int                    @id @default(autoincrement())
+  organizationId       Int
+  categoryId           Int
+  buildingId           Int
+  name                 String                 @db.VarChar(100)
+  floorNumber          Int?
+  roomNumber           String?                @db.VarChar(50)
+  capacity             Int?
+  description          String?
+  requiresApproval     Boolean                @default(false)
+  isAvailable          Boolean                @default(true)
+  isActive             Boolean                @default(true)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  Booking              Booking[]
+  MaintenanceLog       MaintenanceLog[]
+  MaintenanceSchedule  MaintenanceSchedule[]
+  Building             Building               @relation(fields: [buildingId], references: [buildingId])
+  ResourceCategory     ResourceCategory       @relation(fields: [categoryId], references: [categoryId])
+  Organization         Organization           @relation(fields: [organizationId], references: [organizationId])
+  ResourceAmenity      ResourceAmenity[]
+  ResourceAvailability ResourceAvailability[]
+  StorageUnit          StorageUnit[]
+}
+
+model ResourceAmenity {
+  amenityId  Int      @id @default(autoincrement())
+  resourceId Int
+  name       String   @db.VarChar(100)
+  type       String
+  quantity   Int?
+  isWorking  Boolean  @default(true)
+
+  Resource   Resource @relation(fields: [resourceId], references: [resourceId])
+}
+
+model ResourceAvailability {
+  availabilityId Int       @id @default(autoincrement())
+  resourceId     Int
+  dayOfWeek      DayOfWeek
+  startTime      DateTime
+  endTime        DateTime
+  isAvailable    Boolean   @default(true)
+
+  Resource       Resource  @relation(fields: [resourceId], references: [resourceId])
+}
+
+model Booking {
+  bookingId       Int               @id @default(autoincrement())
+  organizationId  Int
+  resourceId      Int
+  userId          Int
+  title           String            @db.VarChar(200)
+  purpose         String?
+  startDateTime   DateTime
+  endDateTime     DateTime
+  attendeesCount  Int?
+  status          BookingStatus     @default(PENDING)
+  priority        BookingPriority   @default(MEDIUM)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  Organization    Organization      @relation(fields: [organizationId], references: [organizationId])
+  Resource        Resource          @relation(fields: [resourceId], references: [resourceId])
+  User            User              @relation(fields: [userId], references: [id])
+  BookingApproval BookingApproval[]
+}
+
+model BookingApproval {
+  approvalId Int            @id @default(autoincrement())
+  bookingId  Int            @unique
+  approverId Int?
+  status     ApprovalStatus @default(PENDING)
+  comments   String?
+  approvedAt DateTime?
+
+  User       User?           @relation(fields: [approverId], references: [id])
+  Booking    Booking        @relation(fields: [bookingId], references: [bookingId])
+}
+
+model Compartment {
+  compartmentId     Int         @id @default(autoincrement())
+  unitId            Int
+  compartmentNumber String      @db.VarChar(50)
+  capacity          Int?
+  isAvailable       Boolean     @default(true)
+  assignedTo        Int?
+  description       String?
+
+  StorageUnit       StorageUnit @relation(fields: [unitId], references: [unitId])
+}
+
+model StorageUnit {
+  unitId            Int           @id @default(autoincrement())
+  resourceId        Int
+  name              String        @db.VarChar(100)
+  type              String
+  totalCompartments Int
+  createdAt         DateTime      @default(now())
+
+  Compartment       Compartment[]
+  Resource          Resource      @relation(fields: [resourceId], references: [resourceId])
+}
+
+model MaintenanceSchedule {
+  scheduleId     Int               @id @default(autoincrement())
+  resourceId     Int
+  assignedTo     Int?
+  type           MaintenanceType
+  scheduledDate  DateTime
+  status         MaintenanceStatus @default(SCHEDULED)
+  notes          String?
+  createdAt      DateTime          @default(now())
+
+  MaintenanceLog MaintenanceLog[]
+  User           User?             @relation(fields: [assignedTo], references: [id])
+  Resource       Resource          @relation(fields: [resourceId], references: [resourceId])
+}
+
+model MaintenanceLog {
+  logId               Int                 @id @default(autoincrement())
+  scheduleId          Int
+  resourceId          Int
+  performedBy         Int
+  maintenanceDate     DateTime            @default(now())
+  issuesFound         String?
+  actionsTaken        String?
+  cost                Decimal?            @db.Decimal(10, 2)
+  completedAt         DateTime?
+
+  User                User                @relation(fields: [performedBy], references: [id])
+  Resource            Resource            @relation(fields: [resourceId], references: [resourceId])
+  MaintenanceSchedule MaintenanceSchedule @relation(fields: [scheduleId], references: [scheduleId])
+}
+
+model Notification {
+  notificationId Int              @id @default(autoincrement())
+  userId         Int
+  title          String           @db.VarChar(200)
+  message        String
+  type           NotificationType
+  isRead         Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  
+  User           User             @relation(fields: [userId], references: [id])
+}
+
+model AuditLog {
+  logId     Int         @id @default(autoincrement())
+  userId    Int
+  action    AuditAction
+  entity    AuditEntity
+  entityId  Int?
+  oldData   Json?
+  newData   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime    @default(now())
+
+  User User @relation(fields: [userId], references: [id])
+}
+
+model Account {
+  id                Int     @id @default(autoincrement())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           Int      @id @default(autoincrement())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  STAFF
+  USER
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum BookingPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum MaintenanceType {
+  PREVENTIVE
+  CORRECTIVE
+  EMERGENCY
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum OrganizationType {
+  COMPANY
+  COLLEGE
+  HOSPITAL
+  GOVERNMENT
+  OTHER
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  APPROVE
+  REJECT
+  LOGIN
+  LOGOUT
+}
+
+enum AuditEntity {
+  USER
+  RESOURCE
+  BOOKING
+  MAINTENANCE
+  ORGANIZATION
+  DEPARTMENT
+}
