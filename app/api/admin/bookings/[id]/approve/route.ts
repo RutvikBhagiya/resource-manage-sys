@@ -1,7 +1,8 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { BookingStatus,ApprovalStatus } from "@/generated/prisma/enums" 
+import { BookingStatus,ApprovalStatus,NotificationType } from "@/generated/prisma/enums" 
+import { sendNotification } from "@/lib/notifications"
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try{
@@ -65,6 +66,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                 }
             })
             ])
+        await sendNotification({
+            userId: booking.userId,
+            title: "Booking Approved",
+            message: `Your booking for ${booking.Resource.name} has been approved.`,
+            type: NotificationType.SUCCESS
+        })
 
         return Response.json({booking: result[0], approval: result[1]})
     }

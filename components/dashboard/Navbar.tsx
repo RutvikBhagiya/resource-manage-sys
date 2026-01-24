@@ -1,8 +1,9 @@
 "use client"
 
-import { Bell, Search, Menu } from "lucide-react"
+import { Search, Menu } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { ThemeToggle } from "@/components/ThemeToggle"
+import { NotificationDropdown } from "@/components/layout/NotificationDropdown"
 
 export function Navbar() {
     const { name, role, image, isAuthenticated } = useAuth()
@@ -14,10 +15,12 @@ export function Navbar() {
     return (
         <header className="sticky top-4 z-30 mx-6 mb-8">
             <div className="glass flex h-20 items-center justify-between gap-4 rounded-[2rem] px-8 transition-all">
+                {/* Mobile Menu */}
                 <button className="md:hidden p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">
                     <Menu className="size-6" />
                 </button>
 
+                {/* Left Side: Welcome & Search */}
                 <div className="flex flex-1 items-center gap-6">
                     <div className="hidden md:flex flex-col">
                         <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">
@@ -26,7 +29,6 @@ export function Navbar() {
                         <p className="text-xs text-slate-500 dark:text-slate-400">Manage your resources efficiently</p>
                     </div>
 
-                    {/* Premium Search Bar */}
                     <div className="relative hidden w-full max-w-md md:block group">
                         <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400 transition-colors group-hover:text-violet-500" />
                         <input
@@ -37,14 +39,14 @@ export function Navbar() {
                     </div>
                 </div>
 
+                {/* Right Side: Actions */}
                 <div className="flex items-center gap-3">
                     <ThemeToggle />
 
-                    <button className="relative rounded-2xl bg-white/40 dark:bg-white/5 p-3 text-slate-500 dark:text-slate-400 transition-all hover:bg-white/60 dark:hover:bg-white/10 hover:text-violet-600 dark:hover:text-violet-400 hover:shadow-lg hover:shadow-violet-500/10 hover:-translate-y-0.5">
-                        <Bell className="size-5" />
-                        <span className="absolute right-3 top-3 size-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900 animate-pulse" />
-                    </button>
+                    {/* 2. REPLACED STATIC BUTTON WITH SMART DROPDOWN */}
+                    <NotificationDropdown />
 
+                    {/* User Profile */}
                     <div className="flex items-center gap-3 pl-6 border-l border-slate-200 dark:border-white/10">
                         <div className="text-right hidden lg:block">
                             <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{userName}</p>
