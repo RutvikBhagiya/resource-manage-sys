@@ -1,28 +1,53 @@
 "use client"
 
-import { useState } from "react"
-import { Sidebar } from "@/components/dashboard/Sidebar"
-import { Navbar } from "@/components/dashboard/Navbar"
-import { cn } from "@/lib/utils/cn"
+import { useState, useEffect } from "react"
+import { Sidebar } from "@/components/layout/AppSidebar" 
+import { Navbar } from "@/components/layout/AppNavbar"
+import { cn } from "@/lib/utils"
 
-export function DashboardShell({ children }: { children: React.ReactNode }) {
-    const [isCollapsed, setIsCollapsed] = useState(false)
+interface DashboardShellProps {
+  children: React.ReactNode
+}
 
-    return (
-        <div className="min-h-screen bg-transparent transition-colors duration-300 font-sans">
-            <Sidebar isCollapsed={isCollapsed} toggleCollapse={() => setIsCollapsed(!isCollapsed)} />
+export function DashboardShell({ children }: DashboardShellProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
-            <div
-                className={cn(
-                    "transition-all duration-500 ease-in-out",
-                    isCollapsed ? "pl-28" : "pl-80"
-                )}
-            >
-                <Navbar />
-                <main className="min-h-[calc(100vh-8rem)] p-8 pt-0 animate-fade-in">
-                    {children}
-                </main>
-            </div>
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+      if (window.innerWidth < 1024) setIsCollapsed(true)
+    }
+    
+    checkMobile()
+    
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
+
+  const toggleCollapse = () => setIsCollapsed(!isCollapsed)
+
+  return (
+    <div className="relative min-h-screen bg-background flex overflow-hidden">
+      
+      <div className="hidden md:block">
+        <Sidebar 
+          isCollapsed={isCollapsed} 
+          toggleCollapse={toggleCollapse} 
+        />
+      </div>
+      <main 
+        className={cn(
+          "flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out",
+          isCollapsed ? "md:pl-24" : "md:pl-80"
+        )}
+      >
+        <Navbar />
+
+        <div className="flex-1 px-6 pb-6 animate-fade-in">
+          {children}
         </div>
-    )
+      </main>
+    </div>
+  )
 }
