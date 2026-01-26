@@ -1,193 +1,195 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { BookingStatus } from "@/generated/prisma/enums";
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { CalendarIcon, Loader2, AlertCircle } from "lucide-react"
+import { bookingCreateSchema, type BookingCreateInput } from "@/lib/validators/booking.schema"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import {Form,FormControl,FormDescription,FormField,FormItem,FormLabel,FormMessage,} from "@/components/ui/form"
+import {Select,SelectContent,SelectItem,SelectTrigger,SelectValue,} from "@/components/ui/select"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface ResourceOption {
-  resourceId: number;
-  name: string;
-  roomNumber: string | null;
-  requiresApproval: boolean;
+  resourceId: number
+  name: string
+  roomNumber: string | null
+  requiresApproval: boolean
 }
 
 interface BookingFormProps {
-  resources: ResourceOption[];
-  userId: number;
+  resources: ResourceOption[]
+  userId: number
 }
 
-export function BookingForm({ resources }: BookingFormProps) {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+export function BookingForm({ resources, userId }: BookingFormProps) {
+  const router = useRouter()
+  const [serverError, setServerError] = useState<string | null>(null)
 
-  const [formData, setFormData] = useState({
-    resourceId: "", 
-    title: "",
-    purpose: "",
-    startDateTime: "",
-    endDateTime: "",
-    attendeesCount: 0,
-  });
+  const form = useForm<BookingCreateInput>({
+    resolver: zodResolver(bookingCreateSchema),
+    defaultValues: {
+      title: "",
+      purpose: "",
+      attendeesCount: 0,
+      startDateTime: "",
+      endDateTime: "",
+    },
+  })
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    if (!formData.resourceId) {
-      setError("Please select a resource.");
-      setIsLoading(false);
-      return;
-    }
-
-    const start = new Date(formData.startDateTime);
-    const end = new Date(formData.endDateTime);
-
-    if (end <= start) {
-      setError("End time must be after start time.");
-      setIsLoading(false);
-      return;
-    }
-
+  async function onSubmit(data: BookingCreateInput) {
+    setServerError(null)
+    
     try {
-      const payload = {
-        resourceId: Number(formData.resourceId),
-        title: formData.title,
-        purpose: formData.purpose,
-        startDateTime: start.toISOString(), 
-        endDateTime: end.toISOString(),
-        attendeesCount: Number(formData.attendeesCount) || 0,
-      };
-
+      
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+        body: JSON.stringify(data),
+      })
 
       if (!res.ok) {
-        const errorMsg = await res.text();
+        const errorText = await res.text()
         if (res.status === 409) {
-          setError("CONFLICT: This time slot is already booked. Please choose another time.");
+          setServerError("Conflict: This time slot is already booked. Please choose another time.")
         } else {
-          setError(`Failed: ${errorMsg}`);
+          setServerError(`Failed: ${errorText}`)
         }
-        return;
+        return
       }
 
-      router.push("/user/bookings"); 
-      router.refresh(); 
-
-    } catch (err) {
-      console.error(err);
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setIsLoading(false);
+      router.push("/user/bookings")
+      router.refresh()
+    } catch (error) {
+      setServerError("Something went wrong. Please check your connection.")
     }
-  };
+  }
 
-  const selectedResource = resources.find(r => r.resourceId === Number(formData.resourceId));
+  const selectedResourceId = form.watch("resourceId")
+  const selectedResource = resources.find((r) => r.resourceId === selectedResourceId)
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 max-w-2xl mx-auto">
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Request a Resource</h2>
-
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded border border-red-200">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-5">
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Select Resource</label>
-          <select
-            name="resourceId"
-            value={formData.resourceId}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none"
-            required
-          >
-            <option value="">-- Choose a resource --</option>
-            {resources.map((res) => (
-              <option key={res.resourceId} value={res.resourceId}>
-                {res.name} {res.roomNumber ? `(${res.roomNumber})` : ""}
-              </option>
-            ))}
-          </select>
-          {selectedResource?.requiresApproval && (
-            <p className="text-xs text-yellow-600 mt-1">
-              Note: This resource requires Admin approval.
-            </p>
+    <div className="max-w-2xl mx-auto">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          
+          {serverError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{serverError}</AlertDescription>
+            </Alert>
           )}
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Event Title</label>
-          <input
-            type="text"
+          <FormField
+            control={form.control}
+            name="resourceId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Select Resource</FormLabel>
+                <Select 
+                  onValueChange={(val) => field.onChange(Number(val))}
+                  defaultValue={field.value?.toString()}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a room or equipment" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {resources.map((res) => (
+                      <SelectItem key={res.resourceId} value={res.resourceId.toString()}>
+                        {res.name} {res.roomNumber && `(${res.roomNumber})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedResource?.requiresApproval && (
+                  <FormDescription className="text-amber-600 font-medium">
+                  </FormDescription>
+                )}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
             name="title"
-            value={formData.title}
-            onChange={handleChange}
-            placeholder="e.g., Team Weekly Sync"
-            className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none"
-            required
-            minLength={3}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Event Title</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., Weekly Team Sync" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-            <input
-              type="datetime-local"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
               name="startDateTime"
-              value={formData.startDateTime}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none"
-              required
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Start Time</FormLabel>
+                  <FormControl>
+                    <Input type="datetime-local" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-            <input
-              type="datetime-local"
+
+            <FormField
+              control={form.control}
               name="endDateTime"
-              value={formData.endDateTime}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none"
-              required
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>End Time</FormLabel>
+                  <FormControl>
+                    <Input type="datetime-local" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Purpose / Notes</label>
-          <textarea
+          <FormField
+            control={form.control}
             name="purpose"
-            value={formData.purpose}
-            onChange={handleChange}
-            rows={3}
-            className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Purpose / Notes (Optional)</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Briefly describe why you need this resource..." 
+                    className="resize-none" 
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-
-        <div className="pt-2">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 transition"
-          >
-            {isLoading ? "Submitting Request..." : "Submit Request"}
-          </button>
-        </div>
-      </form>
+          
+          <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting Request...
+              </>
+            ) : (
+              "Submit Request"
+            )}
+          </Button>
+        </form>
+      </Form>
     </div>
-  );
+  )
 }

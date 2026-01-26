@@ -38,12 +38,21 @@ export async function PATCH(req: Request,{params}: {params: Promise<{ id: string
             return result.response
         }
 
+        const data = result.data
+
         const updatedResource = await prisma.resource.update({
-            where: { 
-                resourceId,
-                organizationId: session.user.organizationId,
-             },
-            data: result.data
+            where: { resourceId },
+            data: {
+                name: data.name,
+                description: data.description,
+                capacity: data.capacity,
+                floorNumber: data.floorNumber,
+                roomNumber: data.roomNumber,
+                requiresApproval: data.requiresApproval,
+                isAvailable: data.isAvailable,                
+                categoryId: data.categoryId,
+                buildingId: data.buildingId
+            }
         })
 
         return Response.json(updatedResource)

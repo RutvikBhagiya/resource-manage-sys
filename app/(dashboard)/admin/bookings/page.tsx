@@ -1,116 +1,214 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { BookingStatusBadge } from "@/components/booking/BookingStatusBadge";
-import { BookingActions } from "@/components/booking/BookingActions";
-import { format } from "date-fns";
+// import { prisma } from "@/lib/prisma"
+// import { getServerSession } from "next-auth"
+// import { authOptions } from "@/lib/auth"
+// import { redirect } from "next/navigation"
+// import { BookingTable } from "@/components/booking/BookingTable"
 
-export default async function AdminBookingsPage() {
-  const session = await getServerSession(authOptions);
-  
-  if (!session || session.user.role !== "ADMIN") return null;
+// export default async function AdminBookingsPage() {
+//   const session = await getServerSession(authOptions)
 
-  const bookings = await prisma.booking.findMany({
-    where: {
-      organizationId: session.user.organizationId,
-    },
-    include: {
-      User: {
-        select: { name: true, email: true }
+//   // 1. Security Check
+//   if (!session) redirect("/login")
+//   if (session.user.role !== "ADMIN") {
+//     return <div className="p-6">Access Denied</div>
+//   }
+
+//   // 2. Fetch Data (CRITICAL: You must include 'User' here!)
+//   const bookings = await prisma.booking.findMany({
+//     where: {
+//       organizationId: session.user.organizationId, // Only show my org's bookings
+//     },
+//     include: {
+//       Resource: {
+//         select: {
+//           name: true,
+//           roomNumber: true, // Required for the table
+//         },
+//       },
+//       User: { // <--- THIS IS REQUIRED for Admin View
+//         select: {
+//           name: true,
+//           email: true,
+//         },
+//       },
+//     },
+//     orderBy: {
+//       createdAt: "desc",
+//     },
+//   })
+
+//   return (
+//     <div className="space-y-8 p-6">
+//       <div className="flex items-center justify-between">
+//         <div>
+//           <h1 className="text-3xl font-bold tracking-tight">Booking Requests</h1>
+//           <p className="text-muted-foreground mt-1">
+//             Review and manage incoming resource requests.
+//           </p>
+//         </div>
+//       </div>
+
+//       <div className="grid gap-4">
+//         {/* 3. Render Table in Admin Mode */}
+//         <BookingTable 
+//           data={bookings} 
+//           mode="admin" // This triggers the "Approve/Reject" buttons & Requester Column
+//         />
+//       </div>
+//     </div>
+//   )
+// }
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
+import { redirect } from "next/navigation"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+
+const ITEMS_PER_PAGE = 10
+
+export default async function BookingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>
+}) {
+  const session = await getServerSession(authOptions)
+  if (!session) redirect("/login")
+
+  const { page } = await searchParams
+  const currentPage = Number(page) || 1
+  // Security Check: Prevent negative pages
+  if (currentPage < 1) redirect("/admin/bookings?page=1")
+
+  const skip = (currentPage - 1) * ITEMS_PER_PAGE
+
+  const [bookings, totalCount] = await Promise.all([
+    prisma.booking.findMany({
+      where: { organizationId: session.user.organizationId },
+      include: {
+        User: { select: { name: true, email: true } },
+        Resource: { select: { name: true } }
       },
-      Resource: {
-        select: { name: true, roomNumber: true }
-      }
-    },
-    orderBy: {
-      createdAt: 'desc'
-    }
-  });
+      orderBy: { createdAt: "desc" },
+      take: ITEMS_PER_PAGE,
+      skip: skip,
+    }),
+    prisma.booking.count({
+      where: { organizationId: session.user.organizationId }
+    })
+  ])
+
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
+
+  // Security Check: If user manually types ?page=100 and it's empty, redirect back
+  // Only redirect if we actually have data (totalCount > 0) but went too far
+  if (currentPage > totalPages && totalCount > 0) {
+      redirect(`/admin/bookings?page=${totalPages}`)
+  }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Booking Management</h1>
-        <div className="text-sm text-gray-500">
-          Viewing {bookings.length} requests
-        </div>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Bookings</h1>
       </div>
 
-      <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Resource
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Requester
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Schedule
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {bookings.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-gray-500">
+      <div className="rounded-xl border bg-card shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Resource</TableHead>
+              <TableHead>User</TableHead>
+              <TableHead>Date & Time</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {bookings.length === 0 ? (
+               <TableRow>
+                  <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
                     No bookings found.
-                  </td>
-                </tr>
-              ) : (
-                bookings.map((booking) => (
-                  <tr key={booking.bookingId} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {booking.Resource.name}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {booking.Resource.roomNumber ? `Unit: ${booking.Resource.roomNumber}` : 'General Resource'}
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{booking.User.name}</div>
-                      <div className="text-xs text-gray-500">{booking.User.email}</div>
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {format(new Date(booking.startDateTime), "MMM d, yyyy")}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {format(new Date(booking.startDateTime), "h:mm a")} - {format(new Date(booking.endDateTime), "h:mm a")}
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <BookingStatusBadge status={booking.status} />
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      {booking.status === "PENDING" ? (
-                        <BookingActions bookingId={booking.bookingId} />
-                      ) : (
-                        <span className="text-gray-400 text-xs">
-                          {booking.status.charAt(0) + booking.status.slice(1).toLowerCase()}
+                  </TableCell>
+               </TableRow>
+            ) : (
+               bookings.map((booking) => (
+                <TableRow key={booking.bookingId}>
+                  <TableCell className="font-medium">{booking.Resource.name}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                        <span>{booking.User.name}</span>
+                        <span className="text-xs text-muted-foreground">{booking.User.email}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                        {new Date(booking.startDateTime).toLocaleDateString()} <br/>
+                        <span className="text-xs text-muted-foreground">
+                           {new Date(booking.startDateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - 
+                           {new Date(booking.endDateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={
+                        booking.status === "APPROVED" ? "default" : 
+                        booking.status === "REJECTED" ? "destructive" : 
+                        "secondary"
+                    }>
+                        {booking.status}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+               ))
+            )}
+          </TableBody>
+        </Table>
+
+        {/* INDUSTRIAL STANDARD PAGINATION LOGIC */}
+        {/* Only show pagination bar if there is more than 1 page */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-end space-x-2 py-4 px-4 border-t bg-muted/20 rounded-b-xl">
+            <div className="text-xs text-muted-foreground mr-auto">
+               Page {currentPage} of {totalPages}
+            </div>
+            
+            {/* PREVIOUS BUTTON */}
+            {currentPage <= 1 ? (
+                <Button variant="outline" size="sm" disabled>
+                   <ChevronLeft className="h-4 w-4 mr-2" /> Previous
+                </Button>
+            ) : (
+                <Button variant="outline" size="sm" asChild>
+                   <Link href={`/admin/bookings?page=${currentPage - 1}`}>
+                      <ChevronLeft className="h-4 w-4 mr-2" /> Previous
+                   </Link>
+                </Button>
+            )}
+            
+            {/* NEXT BUTTON */}
+            {currentPage >= totalPages ? (
+                <Button variant="outline" size="sm" disabled>
+                   Next <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+            ) : (
+                <Button variant="outline" size="sm" asChild>
+                   <Link href={`/admin/bookings?page=${currentPage + 1}`}>
+                      Next <ChevronRight className="h-4 w-4 ml-2" />
+                   </Link>
+                </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
-  );
+  )
 }

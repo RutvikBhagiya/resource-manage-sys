@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth" 
 import { prisma } from "@/lib/prisma"
 import { validate } from "@/lib/utils/validate"
-import { resourceCreateSchema } from "@/lib/validators/resource.schema"
+import { resourceSchema } from "@/lib/validators/resource.schema"
 
 export async function POST(req: Request) {
     try{
@@ -17,17 +17,24 @@ export async function POST(req: Request) {
         }
 
         const json = await req.json()
-        const result = validate(resourceCreateSchema, json)
+        const result = validate(resourceSchema, json)
 
         if(!result.success){
             return result.response
         }
         const data = result.data
-
         const resource = await prisma.resource.create({
             data: {
-                ...data,
-                organizationId: session.user.organizationId
+                name: data.name,
+                description: data.description,
+                capacity: data.capacity,
+                floorNumber: data.floorNumber,
+                roomNumber: data.roomNumber,
+                requiresApproval: data.requiresApproval,
+                isAvailable: data.isAvailable,
+                organizationId: session.user.organizationId,
+                categoryId: data.categoryId,
+                buildingId: data.buildingId
             }
         })
 

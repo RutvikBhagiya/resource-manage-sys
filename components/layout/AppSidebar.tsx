@@ -5,30 +5,21 @@ import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 import { useAuth } from "@/hooks/useAuth"
 import { cn } from "@/lib/utils"
-import { 
-  LayoutDashboard, Package, Calendar, Settings, LogOut, 
-  Building2, Users, FileText, ChevronLeft, ChevronRight, Shield 
-} from "lucide-react"
+import { LayoutDashboard, Package, Calendar, LogOut, Building2, Users, FileText, ChevronLeft, ChevronRight, Shield } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import {Tooltip,TooltipContent,TooltipProvider,TooltipTrigger} from "@/components/ui/tooltip"
 
-// Define links outside component to keep render logic clean
 const SIDEBAR_ITEMS = [
-  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["USER", "ADMIN", "SUPER_ADMIN", "STAFF"] },
-  { title: "Platform Admin", href: "/super-admin/dashboard", icon: Shield, roles: ["SUPER_ADMIN"] },
-  { title: "Organization", href: "/admin/dashboard", icon: Building2, roles: ["ADMIN"] },
-  { title: "Resources", href: "/resources/dashboard", icon: Package, roles: ["USER", "STAFF", "ADMIN", "SUPER_ADMIN"] },
+  { title: "Dashboard", href: "/", icon: LayoutDashboard, roles: ["USER", "ADMIN", "SUPER_ADMIN", "STAFF"] },
+  { title: "Platform Admin", href: "/super-admin", icon: Shield, roles: ["SUPER_ADMIN"] },
+  { title: "Organization", href: "/admin/organizations", icon: Building2, roles: ["ADMIN"] },
+  { title: "Resources", href: "/admin/resources", icon: Package, roles: ["USER", "STAFF", "ADMIN", "SUPER_ADMIN"] },  
   { title: "Bookings", href: "/bookings", icon: Calendar, roles: ["USER", "STAFF", "ADMIN", "SUPER_ADMIN"] },
-  { title: "Staff Portal", href: "/dashboard/staff", icon: Users, roles: ["STAFF"] },
-  { title: "Users", href: "/dashboard/users", icon: Users, roles: ["SUPER_ADMIN", "ADMIN"] },
-  { title: "Reports", href: "/dashboard/reports", icon: FileText, roles: ["ADMIN", "SUPER_ADMIN"] },
+  { title: "Staff Portal", href: "/staff", icon: Users, roles: ["STAFF"] },
+  { title: "Users", href: "/admin/users", icon: Users, roles: ["SUPER_ADMIN", "ADMIN"] },
+  { title: "Reports", href: "/admin/reports", icon: FileText, roles: ["ADMIN", "SUPER_ADMIN"] },
 ]
 
 interface SidebarProps {
@@ -59,7 +50,7 @@ export function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
           {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
 
-        {/* Header / Logo */}
+        {/* Header */}
         <div className={cn("flex h-20 items-center px-6 transition-all", isCollapsed && "justify-center px-0")}>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg">
@@ -81,13 +72,20 @@ export function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
           {SIDEBAR_ITEMS.map((item) => {
             if (!item.roles.includes(userRole)) return null
 
-            // Dynamic Link Logic
             let href = item.href
-            if (item.title === "Dashboard" && userRole === "USER") href = "/user/dashboard"
+            
+            if (item.title === "Dashboard" && userRole === "USER") href = "/user"
+            if (item.title === "Dashboard" && userRole === "ADMIN") href = "/admin"
+            if (item.title === "Dashboard" && userRole === "STAFF") href = "/staff"
             if (item.title === "Bookings" && userRole === "USER") href = "/user/bookings"
             if (item.title === "Bookings" && userRole === "ADMIN") href = "/admin/bookings"
 
-            const isActive = pathname?.startsWith(href)
+            // --- THE FIX IS HERE ---
+            // If it's "Dashboard", we force strict equality (===).
+            // For others (like Resources), we allow startsWith so "/resources/new" still highlights "Resources".
+            const isActive = item.title === "Dashboard" 
+              ? pathname === href 
+              : pathname === href || pathname?.startsWith(href + "/")
 
             return (
               <Tooltip key={item.title}>
@@ -114,7 +112,6 @@ export function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
 
         <Separator className="opacity-50" />
 
-        {/* Footer Actions */}
         <div className="p-3 space-y-2">
           <Tooltip>
             <TooltipTrigger asChild>

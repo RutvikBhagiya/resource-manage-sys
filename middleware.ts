@@ -5,7 +5,6 @@ import { getToken } from "next-auth/jwt";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1️⃣ Public routes
   const publicPaths = ["/login", "/register", "/api/auth"];
   if (
     publicPaths.some(path => pathname.startsWith(path)) ||
@@ -16,19 +15,16 @@ export async function middleware(request: NextRequest) {
 
   const token = await getToken({ req: request });
 
-  // 2️⃣ If NOT authenticated → redirect to login
   if (!token) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  const role = token.role; // SUPER_ADMIN | ADMIN | STAFF | USER
+  const role = token.role;
 
-  // 3️⃣ Prevent logged-in users from visiting auth pages
   if (pathname.startsWith("/login") || pathname.startsWith("/register")) {
     return redirectToRoleDashboard(role, request);
   }
 
-  // 4️⃣ Role-based route protection
   if (pathname.startsWith("/super-admin") && role !== "SUPER_ADMIN") {
     return redirectToRoleDashboard(role, request);
   }
@@ -48,17 +44,16 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// 🔁 Central redirect helper
 function redirectToRoleDashboard(role: string, request: NextRequest) {
   switch (role) {
     case "SUPER_ADMIN":
-      return NextResponse.redirect(new URL("/super-admin/dashboard", request.url));
+      return NextResponse.redirect(new URL("/super-admin", request.url));
     case "ADMIN":
-      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+      return NextResponse.redirect(new URL("/admin", request.url));
     case "STAFF":
-      return NextResponse.redirect(new URL("/staff/dashboard", request.url));
+      return NextResponse.redirect(new URL("/staff", request.url));
     default:
-      return NextResponse.redirect(new URL("/user/dashboard", request.url));
+      return NextResponse.redirect(new URL("/user", request.url));
   }
 }
 
