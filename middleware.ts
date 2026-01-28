@@ -6,12 +6,19 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const publicPaths = ["/login", "/register", "/api/auth"];
-  if (
-    publicPaths.some(path => pathname.startsWith(path)) ||
-    pathname === "/"
-  ) {
+
+  if (publicPaths.some(path => pathname.startsWith(path))) {
     return NextResponse.next();
   }
+
+  if (pathname === "/") {
+    const token = await getToken({ req: request });
+    if (token) {
+      return redirectToRoleDashboard(token.role, request);
+    }
+    return NextResponse.next();
+  }
+
 
   const token = await getToken({ req: request });
 
