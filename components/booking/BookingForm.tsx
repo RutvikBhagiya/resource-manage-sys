@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { CalendarIcon, Loader2, AlertCircle } from "lucide-react"
-import { bookingCreateSchema, type BookingCreateInput } from "@/lib/validators/booking.schema"
+import { bookingCreateSchema, type BookingCreateInput, type BookingCreateFormValues } from "@/lib/validators/booking.schema"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import {Form,FormControl,FormDescription,FormField,FormItem,FormLabel,FormMessage,} from "@/components/ui/form"
-import {Select,SelectContent,SelectItem,SelectTrigger,SelectValue,} from "@/components/ui/select"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, } from "@/components/ui/form"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface ResourceOption {
@@ -29,22 +29,20 @@ export function BookingForm({ resources, userId }: BookingFormProps) {
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
 
-  const form = useForm<BookingCreateInput>({
+  const form = useForm<BookingCreateFormValues>({
     resolver: zodResolver(bookingCreateSchema),
     defaultValues: {
       title: "",
       purpose: "",
       attendeesCount: 0,
-      startDateTime: "",
-      endDateTime: "",
-    },
+    }
   })
 
-  async function onSubmit(data: BookingCreateInput) {
+  async function onSubmit(data: BookingCreateFormValues) {
     setServerError(null)
-    
+
     try {
-      
+
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -75,7 +73,7 @@ export function BookingForm({ resources, userId }: BookingFormProps) {
     <div className="max-w-2xl mx-auto">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          
+
           {serverError && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -90,7 +88,7 @@ export function BookingForm({ resources, userId }: BookingFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Select Resource</FormLabel>
-                <Select 
+                <Select
                   onValueChange={(val) => field.onChange(Number(val))}
                   defaultValue={field.value?.toString()}
                 >
@@ -138,7 +136,17 @@ export function BookingForm({ resources, userId }: BookingFormProps) {
                 <FormItem>
                   <FormLabel>Start Time</FormLabel>
                   <FormControl>
-                    <Input type="datetime-local" {...field} />
+                    <Input
+                      type="datetime-local"
+                      {...field}
+                      value={field.value instanceof Date ? field.value.toISOString().slice(0, 16) : ""}
+                      onChange={(e) => {
+                        const date = new Date(e.target.value);
+                        if (!isNaN(date.getTime())) {
+                          field.onChange(date);
+                        }
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -152,7 +160,17 @@ export function BookingForm({ resources, userId }: BookingFormProps) {
                 <FormItem>
                   <FormLabel>End Time</FormLabel>
                   <FormControl>
-                    <Input type="datetime-local" {...field} />
+                    <Input
+                      type="datetime-local"
+                      {...field}
+                      value={field.value instanceof Date ? field.value.toISOString().slice(0, 16) : ""}
+                      onChange={(e) => {
+                        const date = new Date(e.target.value);
+                        if (!isNaN(date.getTime())) {
+                          field.onChange(date);
+                        }
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -167,17 +185,17 @@ export function BookingForm({ resources, userId }: BookingFormProps) {
               <FormItem>
                 <FormLabel>Purpose / Notes (Optional)</FormLabel>
                 <FormControl>
-                  <Textarea 
-                    placeholder="Briefly describe why you need this resource..." 
-                    className="resize-none" 
-                    {...field} 
+                  <Textarea
+                    placeholder="Briefly describe why you need this resource..."
+                    className="resize-none"
+                    {...field}
                   />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
+
           <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? (
               <>

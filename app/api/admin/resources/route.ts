@@ -48,7 +48,16 @@ export async function POST(req: Request) {
 
 export async function GET(){
     try{
-        const resources = await prisma.resource.findMany();
+        const session = await getServerSession(authOptions)
+        if (!session) return new Response("Unauthorized", { status: 401 })
+
+        const resources = await prisma.resource.findMany({  
+            orderBy: { createdAt: "desc" },
+            include: {
+                Building : true,
+                ResourceCategory: true
+            }
+        })
 
         return Response.json(resources);
     }

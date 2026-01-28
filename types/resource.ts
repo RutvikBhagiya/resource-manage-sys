@@ -3,10 +3,11 @@ export interface Resource {
   name: string
   capacity?: number | null
   requiresApproval: boolean
-  building: {
+  createdAt: string
+  Building: {
     name: string
   }
-  category: {
+  ResourceCategory: {
     name: string
   }
 }

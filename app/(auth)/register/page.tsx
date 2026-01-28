@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Register() {
   const router = useRouter();
@@ -24,12 +25,12 @@ export default function Register() {
       .then((data) => {
         if (Array.isArray(data)) {
           setOrganizations(data);
-          if (data.length > 0) {
+          if (data.length > 0) { //TO select first organization automatically
             setFormData((prev) => ({ ...prev, organizationId: String(data[0].organizationId) }));
           }
         }
       })
-      .catch((err) => console.error("Failed to fetch organizations", err));
+      .catch(() => setError("Failed to load organizations"));
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -48,8 +49,8 @@ export default function Register() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
+          name: formData.name.trim(),
+          email: formData.email.trim(),
           password: formData.password,
           organizationId: parseInt(formData.organizationId),
           role: formData.role,
@@ -203,9 +204,9 @@ export default function Register() {
 
             <p className="text-center text-sm text-gray-600 mt-4">
               Already have an account?{" "}
-              <a href="/login" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
+              <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
                 Login
-              </a>
+              </Link>
             </p>
           </form>
         </div>

@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import {Form,FormControl,FormDescription,FormField,FormItem,FormLabel,FormMessage} from "@/components/ui/form"
 import {Select,SelectContent,SelectItem,SelectTrigger,SelectValue} from "@/components/ui/select"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
 interface CategoryOption { categoryId: number; name: string }
 interface BuildingOption { buildingId: number; name: string }
@@ -30,20 +31,20 @@ interface ResourceData {
   buildingId: number
 }
 
-interface ResourceFormProps {
+interface ResourceDialogProps {
   categories: CategoryOption[]
   buildings: BuildingOption[]
   initialData?: ResourceData | null
 }
-export function ResourceFormSheet({ categories, buildings, initialData }: ResourceFormProps) {
+
+export function ResourceDialog({ categories, buildings, initialData }: ResourceDialogProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   
-  // Determine if we are in "Edit Mode"
   const isEditing = !!initialData
 
   const form = useForm<ResourceFormValues>({
-    resolver: zodResolver(resourceSchema) as any, // Cast resolver to handle initial undefined values
+    resolver: zodResolver(resourceSchema) as any,
     defaultValues: {
       name: initialData?.name || "",
       description: initialData?.description || "",
@@ -57,38 +58,39 @@ export function ResourceFormSheet({ categories, buildings, initialData }: Resour
     },
   })
 
-  // Reset form when sheet opens or data changes
+
   useEffect(() => {
-    if (open && initialData) {
+    if (open) {
+      if (initialData) {
         form.reset({
-            name: initialData.name,
-            description: initialData.description || "",
-            capacity: initialData.capacity || 1,
-            floorNumber: initialData.floorNumber || 0,
-            roomNumber: initialData.roomNumber || "",
-            requiresApproval: initialData.requiresApproval,
-            isAvailable: initialData.isAvailable,
-            categoryId: initialData.categoryId,
-            buildingId: initialData.buildingId,
+          name: initialData.name,
+          description: initialData.description || "",
+          capacity: initialData.capacity || 1,
+          floorNumber: initialData.floorNumber || 0,
+          roomNumber: initialData.roomNumber || "",
+          requiresApproval: initialData.requiresApproval,
+          isAvailable: initialData.isAvailable,
+          categoryId: initialData.categoryId,
+          buildingId: initialData.buildingId,
         })
-    } else if (open && !initialData) {
+      } else {
         form.reset({
-            name: "",
-            description: "",
-            capacity: 1,
-            floorNumber: 0,
-            roomNumber: "",
-            requiresApproval: false,
-            isAvailable: true,
-            categoryId: undefined,
-            buildingId: undefined,
+          name: "",
+          description: "",
+          capacity: 1,
+          floorNumber: 0,
+          roomNumber: "",
+          requiresApproval: false,
+          isAvailable: true,
+          categoryId: undefined,
+          buildingId: undefined,
         })
+      }
     }
   }, [open, initialData, form])
 
   async function onSubmit(data: ResourceFormValues) {
     try {
-      // Logic for Create vs Update
       const url = isEditing 
         ? `/api/admin/resources/${initialData?.resourceId}` 
         : "/api/admin/resources"
@@ -108,7 +110,7 @@ export function ResourceFormSheet({ categories, buildings, initialData }: Resour
       }
 
       setOpen(false)
-      if (!isEditing) form.reset() // Only clear if creating new
+      if (!isEditing) form.reset()
       router.refresh()
     } catch (error) {
       console.error(error)
@@ -117,30 +119,28 @@ export function ResourceFormSheet({ categories, buildings, initialData }: Resour
   }
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
         {isEditing ? (
-            // EDIT BUTTON (Visible in Table)
             <Button variant="outline" size="sm" className="h-9 px-3 bg-background hover:bg-accent">
                <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
             </Button>
         ) : (
-            // ADD BUTTON (Visible in Header)
             <Button className="gap-2">
                <Plus className="h-4 w-4" /> Add Resource
             </Button>
         )}
-      </SheetTrigger>
+      </DialogTrigger>
       
-      <SheetContent className="overflow-y-auto w-[400px] sm:w-[540px]">
-        <SheetHeader className="mb-6">
-          <SheetTitle>{isEditing ? "Edit Resource" : "Add Resource"}</SheetTitle>
-        </SheetHeader>
+      {/* CHANGED: Added max-w and max-h classes for proper dialog scrolling */}
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
+        <DialogHeader className="mb-4">
+          <DialogTitle>{isEditing ? "Edit Resource" : "Add Resource"}</DialogTitle>
+        </DialogHeader>
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             
-            {/* NAME FIELD */}
             <FormField
               control={form.control}
               name="name"
@@ -155,7 +155,6 @@ export function ResourceFormSheet({ categories, buildings, initialData }: Resour
               )}
             />
 
-            {/* ROW 1: CATEGORY & BUILDING */}
             <div className="flex gap-4">
               <FormField
                 control={form.control}
@@ -202,7 +201,6 @@ export function ResourceFormSheet({ categories, buildings, initialData }: Resour
               />
             </div>
 
-            {/* ROW 2: FLOOR & ROOM */}
             <div className="flex gap-4">
                <FormField
                  control={form.control}
@@ -232,7 +230,6 @@ export function ResourceFormSheet({ categories, buildings, initialData }: Resour
                />
             </div>
 
-            {/* CAPACITY */}
             <FormField
               control={form.control}
               name="capacity"
@@ -247,9 +244,7 @@ export function ResourceFormSheet({ categories, buildings, initialData }: Resour
               )}
             />
             
-            {/* TOGGLES */}
             <div className="grid grid-cols-1 gap-4 pt-2">
-                {/* Approval Toggle */}
                 <FormField
                   control={form.control}
                   name="requiresApproval"
@@ -289,7 +284,7 @@ export function ResourceFormSheet({ categories, buildings, initialData }: Resour
             </Button>
           </form>
         </Form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
-}
+} 

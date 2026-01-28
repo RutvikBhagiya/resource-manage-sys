@@ -1,79 +1,11 @@
-// import { prisma } from "@/lib/prisma"
-// import { getServerSession } from "next-auth"
-// import { authOptions } from "@/lib/auth"
-// import { redirect } from "next/navigation"
-// import { BookingTable } from "@/components/booking/BookingTable"
-
-// export default async function AdminBookingsPage() {
-//   const session = await getServerSession(authOptions)
-
-//   // 1. Security Check
-//   if (!session) redirect("/login")
-//   if (session.user.role !== "ADMIN") {
-//     return <div className="p-6">Access Denied</div>
-//   }
-
-//   // 2. Fetch Data (CRITICAL: You must include 'User' here!)
-//   const bookings = await prisma.booking.findMany({
-//     where: {
-//       organizationId: session.user.organizationId, // Only show my org's bookings
-//     },
-//     include: {
-//       Resource: {
-//         select: {
-//           name: true,
-//           roomNumber: true, // Required for the table
-//         },
-//       },
-//       User: { // <--- THIS IS REQUIRED for Admin View
-//         select: {
-//           name: true,
-//           email: true,
-//         },
-//       },
-//     },
-//     orderBy: {
-//       createdAt: "desc",
-//     },
-//   })
-
-//   return (
-//     <div className="space-y-8 p-6">
-//       <div className="flex items-center justify-between">
-//         <div>
-//           <h1 className="text-3xl font-bold tracking-tight">Booking Requests</h1>
-//           <p className="text-muted-foreground mt-1">
-//             Review and manage incoming resource requests.
-//           </p>
-//         </div>
-//       </div>
-
-//       <div className="grid gap-4">
-//         {/* 3. Render Table in Admin Mode */}
-//         <BookingTable 
-//           data={bookings} 
-//           mode="admin" // This triggers the "Approve/Reject" buttons & Requester Column
-//         />
-//       </div>
-//     </div>
-//   )
-// }
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { BookingTable } from "@/components/booking/BookingTable"
 
 const ITEMS_PER_PAGE = 10
 
@@ -97,7 +29,7 @@ export default async function BookingsPage({
       where: { organizationId: session.user.organizationId },
       include: {
         User: { select: { name: true, email: true } },
-        Resource: { select: { name: true } }
+        Resource: { select: { name: true, roomNumber: true } }
       },
       orderBy: { createdAt: "desc" },
       take: ITEMS_PER_PAGE,
@@ -113,7 +45,7 @@ export default async function BookingsPage({
   // Security Check: If user manually types ?page=100 and it's empty, redirect back
   // Only redirect if we actually have data (totalCount > 0) but went too far
   if (currentPage > totalPages && totalCount > 0) {
-      redirect(`/admin/bookings?page=${totalPages}`)
+    redirect(`/admin/bookings?page=${totalPages}`)
   }
 
   return (
@@ -122,89 +54,41 @@ export default async function BookingsPage({
         <h1 className="text-3xl font-bold tracking-tight">Bookings</h1>
       </div>
 
-      <div className="rounded-xl border bg-card shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Resource</TableHead>
-              <TableHead>User</TableHead>
-              <TableHead>Date & Time</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {bookings.length === 0 ? (
-               <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                    No bookings found.
-                  </TableCell>
-               </TableRow>
-            ) : (
-               bookings.map((booking) => (
-                <TableRow key={booking.bookingId}>
-                  <TableCell className="font-medium">{booking.Resource.name}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                        <span>{booking.User.name}</span>
-                        <span className="text-xs text-muted-foreground">{booking.User.email}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                        {new Date(booking.startDateTime).toLocaleDateString()} <br/>
-                        <span className="text-xs text-muted-foreground">
-                           {new Date(booking.startDateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - 
-                           {new Date(booking.endDateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={
-                        booking.status === "APPROVED" ? "default" : 
-                        booking.status === "REJECTED" ? "destructive" : 
-                        "secondary"
-                    }>
-                        {booking.status}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-               ))
-            )}
-          </TableBody>
-        </Table>
+      <div className="space-y-4">
+        <BookingTable data={bookings} mode="admin" />
 
         {/* INDUSTRIAL STANDARD PAGINATION LOGIC */}
         {/* Only show pagination bar if there is more than 1 page */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-end space-x-2 py-4 px-4 border-t bg-muted/20 rounded-b-xl">
+          <div className="flex items-center justify-end space-x-2 py-4 px-4 border bg-card rounded-xl shadow-sm">
             <div className="text-xs text-muted-foreground mr-auto">
-               Page {currentPage} of {totalPages}
+              Page {currentPage} of {totalPages}
             </div>
-            
+
             {/* PREVIOUS BUTTON */}
             {currentPage <= 1 ? (
-                <Button variant="outline" size="sm" disabled>
-                   <ChevronLeft className="h-4 w-4 mr-2" /> Previous
-                </Button>
+              <Button variant="outline" size="sm" disabled>
+                <ChevronLeft className="h-4 w-4 mr-2" /> Previous
+              </Button>
             ) : (
-                <Button variant="outline" size="sm" asChild>
-                   <Link href={`/admin/bookings?page=${currentPage - 1}`}>
-                      <ChevronLeft className="h-4 w-4 mr-2" /> Previous
-                   </Link>
-                </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/admin/bookings?page=${currentPage - 1}`}>
+                  <ChevronLeft className="h-4 w-4 mr-2" /> Previous
+                </Link>
+              </Button>
             )}
-            
+
             {/* NEXT BUTTON */}
             {currentPage >= totalPages ? (
-                <Button variant="outline" size="sm" disabled>
-                   Next <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
+              <Button variant="outline" size="sm" disabled>
+                Next <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
             ) : (
-                <Button variant="outline" size="sm" asChild>
-                   <Link href={`/admin/bookings?page=${currentPage + 1}`}>
-                      Next <ChevronRight className="h-4 w-4 ml-2" />
-                   </Link>
-                </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/admin/bookings?page=${currentPage + 1}`}>
+                  Next <ChevronRight className="h-4 w-4 ml-2" />
+                </Link>
+              </Button>
             )}
           </div>
         )}

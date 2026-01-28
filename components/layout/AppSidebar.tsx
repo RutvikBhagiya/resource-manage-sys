@@ -13,10 +13,9 @@ import {Tooltip,TooltipContent,TooltipProvider,TooltipTrigger} from "@/component
 
 const SIDEBAR_ITEMS = [
   { title: "Dashboard", href: "/", icon: LayoutDashboard, roles: ["USER", "ADMIN", "SUPER_ADMIN", "STAFF"] },
-  { title: "Platform Admin", href: "/super-admin", icon: Shield, roles: ["SUPER_ADMIN"] },
-  { title: "Organization", href: "/admin/organizations", icon: Building2, roles: ["ADMIN"] },
-  { title: "Resources", href: "/admin/resources", icon: Package, roles: ["USER", "STAFF", "ADMIN", "SUPER_ADMIN"] },  
-  { title: "Bookings", href: "/bookings", icon: Calendar, roles: ["USER", "STAFF", "ADMIN", "SUPER_ADMIN"] },
+  { title: "Organization", href: "/super-admin/organizations", icon: Building2, roles: ["SUPER_ADMIN"] },
+  { title: "Resources", href: "/admin/resources", icon: Package, roles: ["USER", "STAFF", "ADMIN"] },  
+  { title: "Bookings", href: "/bookings", icon: Calendar, roles: ["USER", "STAFF", "ADMIN"] },
   { title: "Staff Portal", href: "/staff", icon: Users, roles: ["STAFF"] },
   { title: "Users", href: "/admin/users", icon: Users, roles: ["SUPER_ADMIN", "ADMIN"] },
   { title: "Reports", href: "/admin/reports", icon: FileText, roles: ["ADMIN", "SUPER_ADMIN"] },
@@ -77,12 +76,10 @@ export function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
             if (item.title === "Dashboard" && userRole === "USER") href = "/user"
             if (item.title === "Dashboard" && userRole === "ADMIN") href = "/admin"
             if (item.title === "Dashboard" && userRole === "STAFF") href = "/staff"
+            if (item.title === "Dashboard" && userRole === "SUPER_ADMIN") href = "/super-admin"
             if (item.title === "Bookings" && userRole === "USER") href = "/user/bookings"
             if (item.title === "Bookings" && userRole === "ADMIN") href = "/admin/bookings"
 
-            // --- THE FIX IS HERE ---
-            // If it's "Dashboard", we force strict equality (===).
-            // For others (like Resources), we allow startsWith so "/resources/new" still highlights "Resources".
             const isActive = item.title === "Dashboard" 
               ? pathname === href 
               : pathname === href || pathname?.startsWith(href + "/")

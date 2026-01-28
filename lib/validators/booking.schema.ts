@@ -1,5 +1,6 @@
 import { z } from "zod"
-import { BookingPriority } from "@/generated/prisma/enums" 
+import { BookingPriority } from "@/generated/prisma/enums"
+
 
 // --- 1. Booking Creation Schema ---
 export const bookingCreateSchema = z.object({
@@ -13,21 +14,21 @@ export const bookingCreateSchema = z.object({
 
   purpose: z.string().optional(),
 
-  startDateTime: z.iso.datetime({ error: "Invalid start date format" }),
-  endDateTime: z.iso.datetime({ error: "Invalid end date format" }),
+  startDateTime: z.coerce.date({ error: "Invalid start date format" }),
+  endDateTime: z.coerce.date({ error: "Invalid end date format" }),
 
   attendeesCount: z.number().int().nonnegative().optional(),
 
   priority: z.enum(BookingPriority).optional()
 })
-.refine((data) => {
-  const start = new Date(data.startDateTime);
-  const end = new Date(data.endDateTime);
-  return end > start;
-}, {
-  message: "End time must be after start time",
-  path: ["endDateTime"]
-});
+  .refine((data) => {
+    const start = new Date(data.startDateTime);
+    const end = new Date(data.endDateTime);
+    return end > start;
+  }, {
+    message: "End time must be after start time",
+    path: ["endDateTime"]
+  });
 
 // --- 2. Booking Rejection Schema ---
 export const bookingRejectSchema = z.object({
@@ -41,4 +42,5 @@ export const bookingRejectSchema = z.object({
 });
 
 export type BookingCreateInput = z.infer<typeof bookingCreateSchema>
+export type BookingCreateFormValues = z.input<typeof bookingCreateSchema>
 export type BookingRejectInput = z.infer<typeof bookingRejectSchema>
