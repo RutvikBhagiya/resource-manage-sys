@@ -10,9 +10,9 @@ interface AppUser {
   name: string;
   email: string;
   role: Role;
-  organizationId: number;
-  organizationName: string;
-  organizationType: string;
+  organizationId: number | null;
+  organizationName: string | null;
+  organizationType: string | null;
   image: string | null;
 }
 
@@ -57,8 +57,8 @@ export const authOptions: NextAuthOptions = {
           role: user.role,
           image: user.image ?? null,
           organizationId: user.organizationId,
-          organizationName: user.Organization.name,
-          organizationType: user.Organization.type
+          organizationName: user.Organization?.name,
+          organizationType: user.Organization?.type
         };
       }
     })
@@ -71,9 +71,9 @@ export const authOptions: NextAuthOptions = {
 
         token.id = u.id;
         token.role = u.role;
-        token.organizationId = u.organizationId;
-        token.organizationName = u.organizationName;
-        token.organizationType = u.organizationType;
+        token.organizationId = u.organizationId ?? null;
+        token.organizationName = u.organizationName ?? null;
+        token.organizationType = u.organizationType ?? null;
         token.image = u.image;
       }
       return token;
@@ -83,9 +83,9 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
-        session.user.organizationId = token.organizationId as number;
-        session.user.organizationName = token.organizationName as string;
-        session.user.organizationType = token.organizationType;
+        session.user.organizationId = token.organizationId as number | null;
+        session.user.organizationName = token.organizationName as string | null;
+        session.user.organizationType = token.organizationType as string | null;
         session.user.image = token.image as string | null;
       }
       return session;

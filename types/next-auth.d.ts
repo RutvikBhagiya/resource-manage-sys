@@ -1,23 +1,15 @@
 import { DefaultSession } from "next-auth"
-import { Role } from "@prisma/client"
+import { Role } from "@/generated/prisma/enums"
 
 declare module "next-auth" {
   interface Session {
     user: {
       id: string
       role: Role
-      organizationId: number
-      organizationName?: string
-      organizationType?: string
+      organizationId?: number | null
+      organizationName?: string | null
+      organizationType?: string | null
     } & DefaultSession["user"]
-  }
-
-  interface User {
-    id: string
-    role: Role
-    organizationId: number
-    organizationName?: string
-    organizationType?: string
   }
 }
 
@@ -25,8 +17,8 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string
     role: Role
-    organizationId: number
-    organizationName?: string
-    organizationType?: string
+    organizationId?: number | null
+    organizationName?: string | null
+    organizationType?: string | null
   }
 }

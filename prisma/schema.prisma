@@ -28,7 +28,7 @@ model Organization {
 
 model User {
   id                  Int                   @id @default(autoincrement())
-  organizationId      Int
+  organizationId      Int?
   departmentId        Int?
   name                String                @db.VarChar(100)
   email               String                @unique @db.VarChar(100)
@@ -49,7 +49,7 @@ model User {
   MaintenanceSchedule MaintenanceSchedule[]
   Notification        Notification[]
   Department          Department?           @relation(fields: [departmentId], references: [departmentId])
-  Organization        Organization          @relation(fields: [organizationId], references: [organizationId])
+  Organization        Organization?          @relation(fields: [organizationId], references: [organizationId])
   auditLogs           AuditLog[]
 }
 
