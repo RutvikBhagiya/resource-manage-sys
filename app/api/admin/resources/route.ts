@@ -32,7 +32,7 @@ export async function POST(req: Request) {
                 roomNumber: data.roomNumber,
                 requiresApproval: data.requiresApproval,
                 isAvailable: data.isAvailable,
-                organizationId: session.user.organizationId,
+                organizationId: session.user.organizationId as number,
                 categoryId: data.categoryId,
                 buildingId: data.buildingId
             }

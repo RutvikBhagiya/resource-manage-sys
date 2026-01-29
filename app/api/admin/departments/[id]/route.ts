@@ -41,7 +41,7 @@ export async function PATCH(req: Request,{params}: {params: Promise<{ id: string
         const updatedDepartment = await prisma.department.update({
             where: { 
                 departmentId,
-                organizationId: session.user.organizationId,
+                organizationId: session.user.organizationId as number,
              },
             data: result.data
         })

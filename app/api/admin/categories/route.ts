@@ -26,7 +26,7 @@ export async function POST(req: Request) {
         const category = await prisma.resourceCategory.create({
             data: {
                 name: data.name,
-                organizationId: session.user.organizationId
+                organizationId: session.user.organizationId as number
             }
         })
 

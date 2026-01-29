@@ -57,8 +57,8 @@ export function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
             </div>
             {!isCollapsed && (
               <div className="flex flex-col overflow-hidden">
-                <span className="truncate font-bold text-lg leading-none">{organizationName || "Loading..."}</span>
-                <span className="truncate text-xs text-muted-foreground">Management System</span>
+                <span className="truncate font-bold text-lg leading-none">{userRole === "SUPER_ADMIN" ? "RESORA" : organizationName || "Loading..."}</span>
+                <span className="truncate text-xs text-muted-foreground">{userRole === "SUPER_ADMIN" ? "Platform Admin" : "Management System"}</span>
               </div>
             )}
           </div>

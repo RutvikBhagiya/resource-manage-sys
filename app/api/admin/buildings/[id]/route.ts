@@ -32,7 +32,7 @@ export async function PATCH(req: Request,{params}: {params: Promise<{ id: string
         }
 
         const json = await req.json()
-        const result = await validate(buildingUpdateSchema,json)
+        const result = validate(buildingUpdateSchema,json)
 
         if(!result.success){
             return result.response
@@ -41,7 +41,7 @@ export async function PATCH(req: Request,{params}: {params: Promise<{ id: string
         const updatedBuilding = await prisma.building.update({
             where: { 
                 buildingId,
-                organizationId: session.user.organizationId,
+                organizationId: session.user.organizationId as number,
              },
             data: result.data
         })

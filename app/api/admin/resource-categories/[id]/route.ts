@@ -41,7 +41,7 @@ export async function PATCH(req: Request, {params}: {params: Promise<{id:String}
         const updatedCategory = await prisma.resourceCategory.update({
             where: { 
                 categoryId,
-                organizationId: session.user.organizationId,
+                organizationId: session.user.organizationId as number
              },
             data: result.data
         })

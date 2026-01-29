@@ -27,7 +27,7 @@ export async function POST(req : Request){
         const department = await prisma.department.create({
             data : {
                 ...data,
-                organizationId: session?.user.organizationId
+                organizationId: session?.user.organizationId as number
             }
         })
 

@@ -16,7 +16,7 @@ export async function GET(req: Request) {
 
         const bookings = await prisma.booking.findMany({
             where: { 
-                organizationId: session.user.organizationId,
+                organizationId: session.user.organizationId as number,
                 ...(status ? { status } : {})
             },
             include: {
