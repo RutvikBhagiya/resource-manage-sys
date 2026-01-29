@@ -32,7 +32,7 @@ export async function PATCH(req: Request,{params}: {params: Promise<{ id: string
         }
 
         const json = await req.json()
-        const result = await validate(organizationUpdateSchema,json)
+        const result = validate(organizationUpdateSchema,json)
 
         if(!result.success){
             return result.response

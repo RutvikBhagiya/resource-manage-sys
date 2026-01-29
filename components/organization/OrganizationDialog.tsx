@@ -2,66 +2,80 @@
 
 import { useState } from "react"
 import { Organization } from "@/types/organization"
-
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import {Dialog,DialogClose,DialogContent,DialogFooter,DialogHeader,DialogTitle,DialogTrigger} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 type Props = {
-  organization: Organization
+  organization?: Organization
+  type?: "edit" | "add"  
 }
 
-export default function OrganizationDialog({ organization }: Props) {
-  const [name, setName] = useState(organization.name)
-  const [email, setEmail] = useState(organization.email ?? "")
-  const [phone, setPhone] = useState(organization.phone ?? "")
-  const [address, setAddress] = useState(organization.address ?? "")
+export default function OrganizationDialog({ organization, type = "edit" }: Props) {
+  const [name, setName] = useState(organization?.name ?? "")
+  const [email, setEmail] = useState(organization?.email ?? "")
+  const [phone, setPhone] = useState(organization?.phone ?? "")
+  const [address, setAddress] = useState(organization?.address ?? "")
+  const [orgType, setOrgType] = useState(organization?.type ?? "")
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
-    await fetch(`/api/super-admin/organizations/${organization.organizationId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        email,
-        phone,
-        address,
-      }),
-    })
+    const body = {
+      name,
+      email,
+      phone,
+      address,
+      type: orgType,
+    }
 
+    if (type === "edit") {
+      await fetch(`/api/super-admin/organizations/${organization?.organizationId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+    } else {
+      await fetch(`/api/super-admin/organizations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+    }
     window.location.reload()
   }
 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
-          Edit
+        <Button size="sm" variant={type === "edit" ? "outline" : "default"}>
+          {type === "edit" ? "Edit" : "Add Organization"}
         </Button>
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-[420px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Edit Organization</DialogTitle>
+            <DialogTitle>{type === "edit" ? "Edit Organization" : "Add Organization"}</DialogTitle>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-
             <div className="grid gap-2">
               <Label>Name</Label>
               <Input value={name} onChange={e => setName(e.target.value)} />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Type</Label>
+              <select value={orgType} onChange={e => setOrgType(e.target.value)}>
+                <option value="">Select Type</option>
+                <option value="COMPANY">Company</option>
+                <option value="COLLEGE">College</option>
+                <option value="HOSPITAL">Hospital</option>
+                <option value="GOVERNMENT">Government</option>
+                <option value="OTHER">Other</option>
+              </select>
             </div>
 
             <div className="grid gap-2">
@@ -78,15 +92,13 @@ export default function OrganizationDialog({ organization }: Props) {
               <Label>Address</Label>
               <Input value={address} onChange={e => setAddress(e.target.value)} />
             </div>
-
           </div>
 
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-
-            <Button type="submit">Save</Button>
+            <Button type="submit">{type === "edit" ? "Save" : "Add"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
