@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AuthSessionProvider } from "@/lib/session-provider";
-import { ThemeProvider } from "@/components/theme-provider"; 
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -24,6 +25,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             {children}
+            <Toaster richColors />
           </ThemeProvider>
         </AuthSessionProvider>
       </body>

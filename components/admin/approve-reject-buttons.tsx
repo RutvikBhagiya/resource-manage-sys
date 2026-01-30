@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 export default function ApproveRejectButtons({ bookingId }: { bookingId: number }) {
   const router = useRouter()
@@ -15,7 +16,7 @@ export default function ApproveRejectButtons({ bookingId }: { bookingId: number 
     if (type === "reject") {
       const reason = prompt("Reason for rejection?")
       if (!reason || reason.length < 3) {
-        alert("Rejection reason must be at least 3 characters")
+        toast.error("Rejection reason must be at least 3 characters")
         setLoading(false)
         return
       }

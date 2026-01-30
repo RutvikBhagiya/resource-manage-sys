@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { RejectModal } from "./RejectModal";
 
 interface BookingActionsProps {
@@ -24,14 +25,15 @@ export function BookingActions({ bookingId }: BookingActionsProps) {
 
       if (!res.ok) {
         const errorText = await res.text();
-        alert(`Error: ${errorText}`);
+        toast.error(`Error: ${errorText}`);
         return;
       }
 
-      router.refresh(); 
+      toast.success("Booking approved successfully");
+      router.refresh();
     } catch (error) {
       console.error(error);
-      alert("Something went wrong.");
+      toast.error("Something went wrong.");
     } finally {
       setIsLoading(false);
     }
@@ -47,15 +49,16 @@ export function BookingActions({ bookingId }: BookingActionsProps) {
       });
 
       if (!res.ok) {
-        alert("Failed to reject booking.");
+        toast.error("Failed to reject booking.");
         return;
       }
 
+      toast.success("Booking rejected successfully");
       setIsModalOpen(false);
       router.refresh();
     } catch (error) {
       console.error(error);
-      alert("Something went wrong.");
+      toast.error("Something went wrong.");
     } finally {
       setIsLoading(false);
     }

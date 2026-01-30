@@ -27,7 +27,7 @@
 //       })
 
 //       if (!res.ok) throw new Error("Failed to delete")
-      
+
 //       router.refresh()
 //     } catch (error) {
 //       alert("Error deleting resource. Please try again.")
@@ -63,10 +63,11 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Trash2 } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 // CHANGED: Import the new Dialog component
-import { ResourceDialog } from "./ResourceDialog" 
+import { ResourceDialog } from "./ResourceDialog"
 
 interface ResourceActionsProps {
   resource: any
@@ -88,9 +89,10 @@ export function ResourceActions({ resource, categories, buildings }: ResourceAct
       })
 
       if (!res.ok) throw new Error("Failed to delete")
+      toast.success("Resource deleted successfully")
       router.refresh()
     } catch (error) {
-      alert("Error deleting resource.")
+      toast.error("Error deleting resource.")
     } finally {
       setLoading(false)
     }
@@ -99,14 +101,14 @@ export function ResourceActions({ resource, categories, buildings }: ResourceAct
   return (
     <div className="flex items-center gap-2">
       {/* 1. EDIT BUTTON: Reuses the Dialog, passing initialData */}
-      <ResourceDialog 
-        categories={categories} 
-        buildings={buildings} 
-        initialData={resource} 
+      <ResourceDialog
+        categories={categories}
+        buildings={buildings}
+        initialData={resource}
       />
 
       {/* 2. DELETE BUTTON */}
-      <Button 
+      <Button
         variant="destructive"
         size="sm"
         onClick={onDelete}

@@ -6,11 +6,12 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2, FolderPlus } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {Dialog,DialogContent,DialogHeader,DialogTitle,DialogTrigger,} from "@/components/ui/dialog"
-import {Form,FormControl,FormField,FormItem,FormLabel,FormMessage,} from "@/components/ui/form"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, } from "@/components/ui/dialog"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, } from "@/components/ui/form"
 
 const categorySchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -19,7 +20,7 @@ const categorySchema = z.object({
 export function CategoryDialog() {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  
+
   const form = useForm<{ name: string }>({
     resolver: zodResolver(categorySchema),
     defaultValues: { name: "" },
@@ -37,9 +38,10 @@ export function CategoryDialog() {
 
       setOpen(false)
       form.reset()
+      toast.success("Category created successfully")
       router.refresh()
     } catch (error) {
-      alert("Failed to create category")
+      toast.error("Failed to create category")
     }
   }
 
@@ -54,7 +56,7 @@ export function CategoryDialog() {
         <DialogHeader>
           <DialogTitle>Create Category</DialogTitle>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField

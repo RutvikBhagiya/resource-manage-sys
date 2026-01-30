@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export function CancelBookingButton({ bookingId }: { bookingId: number }) {
   const router = useRouter();
@@ -14,7 +15,7 @@ export function CancelBookingButton({ bookingId }: { bookingId: number }) {
     try {
       // FIX: Changed method from "POST" to "PATCH" to match your API
       const res = await fetch(`/api/bookings/${bookingId}/cancel`, {
-        method: "PATCH", 
+        method: "PATCH",
       });
 
       if (!res.ok) {
@@ -24,10 +25,11 @@ export function CancelBookingButton({ bookingId }: { bookingId: number }) {
         throw new Error(errorText || "Failed to cancel");
       }
 
+      toast.success("Booking cancelled successfully");
       router.refresh();
     } catch (error) {
       console.error(error);
-      alert("Error canceling booking. Check console for details.");
+      toast.error(error instanceof Error ? error.message : "Error canceling booking");
     } finally {
       setIsLoading(false);
     }

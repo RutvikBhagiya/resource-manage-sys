@@ -6,12 +6,13 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { resourceSchema, type ResourceFormValues } from "@/lib/validators/resource.schema"
 import { Loader2, Plus, Pencil } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import {Form,FormControl,FormDescription,FormField,FormItem,FormLabel,FormMessage} from "@/components/ui/form"
-import {Select,SelectContent,SelectItem,SelectTrigger,SelectValue} from "@/components/ui/select"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
@@ -40,7 +41,7 @@ interface ResourceDialogProps {
 export function ResourceDialog({ categories, buildings, initialData }: ResourceDialogProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  
+
   const isEditing = !!initialData
 
   const form = useForm<ResourceFormValues>({
@@ -91,10 +92,10 @@ export function ResourceDialog({ categories, buildings, initialData }: ResourceD
 
   async function onSubmit(data: ResourceFormValues) {
     try {
-      const url = isEditing 
-        ? `/api/admin/resources/${initialData?.resourceId}` 
+      const url = isEditing
+        ? `/api/admin/resources/${initialData?.resourceId}`
         : "/api/admin/resources"
-      
+
       const method = isEditing ? "PATCH" : "POST"
 
       const res = await fetch(url, {
@@ -105,16 +106,17 @@ export function ResourceDialog({ categories, buildings, initialData }: ResourceD
 
       if (!res.ok) {
         const err = await res.text()
-        alert(`Error: ${err}`)
+        toast.error(`Error: ${err}`)
         return
       }
 
       setOpen(false)
       if (!isEditing) form.reset()
+      toast.success(isEditing ? "Resource updated successfully" : "Resource created successfully")
       router.refresh()
     } catch (error) {
       console.error(error)
-      alert("Something went wrong")
+      toast.error("Something went wrong")
     }
   }
 
@@ -122,25 +124,25 @@ export function ResourceDialog({ categories, buildings, initialData }: ResourceD
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {isEditing ? (
-            <Button variant="outline" size="sm" className="h-9 px-3 bg-background hover:bg-accent">
-               <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
-            </Button>
+          <Button variant="outline" size="sm" className="h-9 px-3 bg-background hover:bg-accent">
+            <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
+          </Button>
         ) : (
-            <Button className="gap-2">
-               <Plus className="h-4 w-4" /> Add Resource
-            </Button>
+          <Button className="gap-2">
+            <Plus className="h-4 w-4" /> Add Resource
+          </Button>
         )}
       </DialogTrigger>
-      
+
       {/* CHANGED: Added max-w and max-h classes for proper dialog scrolling */}
       <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
         <DialogHeader className="mb-4">
           <DialogTitle>{isEditing ? "Edit Resource" : "Add Resource"}</DialogTitle>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            
+
             <FormField
               control={form.control}
               name="name"
@@ -162,14 +164,14 @@ export function ResourceDialog({ categories, buildings, initialData }: ResourceD
                 render={({ field }) => (
                   <FormItem className="flex-1">
                     <FormLabel>Category</FormLabel>
-                    <Select 
-                      onValueChange={(val) => field.onChange(Number(val))} 
+                    <Select
+                      onValueChange={(val) => field.onChange(Number(val))}
                       value={field.value ? String(field.value) : ""}
                     >
                       <FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
                       <SelectContent>
                         {categories.map((cat) => (
-                           <SelectItem key={cat.categoryId} value={String(cat.categoryId)}>{cat.name}</SelectItem>
+                          <SelectItem key={cat.categoryId} value={String(cat.categoryId)}>{cat.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -184,14 +186,14 @@ export function ResourceDialog({ categories, buildings, initialData }: ResourceD
                 render={({ field }) => (
                   <FormItem className="flex-1">
                     <FormLabel>Building</FormLabel>
-                    <Select 
-                      onValueChange={(val) => field.onChange(Number(val))} 
+                    <Select
+                      onValueChange={(val) => field.onChange(Number(val))}
                       value={field.value ? String(field.value) : ""}
                     >
                       <FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
                       <SelectContent>
                         {buildings.map((b) => (
-                           <SelectItem key={b.buildingId} value={String(b.buildingId)}>{b.name}</SelectItem>
+                          <SelectItem key={b.buildingId} value={String(b.buildingId)}>{b.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -202,32 +204,32 @@ export function ResourceDialog({ categories, buildings, initialData }: ResourceD
             </div>
 
             <div className="flex gap-4">
-               <FormField
-                 control={form.control}
-                 name="floorNumber"
-                 render={({ field }) => (
-                   <FormItem className="flex-1">
-                     <FormLabel>Floor No.</FormLabel>
-                     <FormControl>
-                        <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
-                     </FormControl>
-                     <FormMessage />
-                   </FormItem>
-                 )}
-               />
-               <FormField
-                  control={form.control}
-                  name="roomNumber"
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel>Room No.</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. 101" {...field} value={field.value || ""} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-               />
+              <FormField
+                control={form.control}
+                name="floorNumber"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Floor No.</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="roomNumber"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Room No.</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. 101" {...field} value={field.value || ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <FormField
@@ -243,39 +245,39 @@ export function ResourceDialog({ categories, buildings, initialData }: ResourceD
                 </FormItem>
               )}
             />
-            
-            <div className="grid grid-cols-1 gap-4 pt-2">
-                <FormField
-                  control={form.control}
-                  name="requiresApproval"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">Require Approval</FormLabel>
-                        <FormDescription className="text-xs">Admins must approve bookings</FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
 
-                <FormField
-                  control={form.control}
-                  name="isAvailable"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">Available for Booking</FormLabel>
-                        <FormDescription className="text-xs">Turn off for maintenance</FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+            <div className="grid grid-cols-1 gap-4 pt-2">
+              <FormField
+                control={form.control}
+                name="requiresApproval"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Require Approval</FormLabel>
+                      <FormDescription className="text-xs">Admins must approve bookings</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="isAvailable"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Available for Booking</FormLabel>
+                      <FormDescription className="text-xs">Turn off for maintenance</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             </div>
 
             <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>

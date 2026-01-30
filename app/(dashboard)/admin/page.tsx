@@ -11,26 +11,30 @@ export default async function AdminDashboardPage() {
 
   const orgId = session.user.organizationId
 
+  if (!orgId) {
+    return <div className="p-6">User has no organization assigned.</div>
+  }
+
   // 1. Fetch Key Metrics in Parallel (Fast)
   const [
-    totalResources, 
-    pendingBookings, 
-    activeBookings, 
+    totalResources,
+    pendingBookings,
+    activeBookings,
     todaysBookingsCount
   ] = await Promise.all([
     // Count Total Resources
     prisma.resource.count({ where: { organizationId: orgId, isActive: true } }),
-    
+
     // Count Pending Approvals
     prisma.booking.count({ where: { organizationId: orgId, status: "PENDING" } }),
-    
+
     // Count Approved Future Bookings
-    prisma.booking.count({ 
-      where: { 
-        organizationId: orgId, 
+    prisma.booking.count({
+      where: {
+        organizationId: orgId,
         status: "APPROVED",
         endDateTime: { gte: new Date() } // Future only
-      } 
+      }
     }),
 
     // Count Bookings Happening TODAY
@@ -39,8 +43,8 @@ export default async function AdminDashboardPage() {
         organizationId: orgId,
         status: "APPROVED",
         startDateTime: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)), // Start of today
-            lt: new Date(new Date().setHours(23, 59, 59, 999)) // End of today
+          gte: new Date(new Date().setHours(0, 0, 0, 0)), // Start of today
+          lt: new Date(new Date().setHours(23, 59, 59, 999)) // End of today
         }
       }
     })
@@ -52,15 +56,15 @@ export default async function AdminDashboardPage() {
     take: 5,
     orderBy: { createdAt: "desc" },
     include: {
-        User: { select: { name: true, email: true } },
-        Resource: { select: { name: true } }
+      User: { select: { name: true, email: true } },
+      Resource: { select: { name: true } }
     }
   })
 
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
-      
+
       {/* METRIC CARDS */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -116,21 +120,21 @@ export default async function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             {recentRequests.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No pending requests.</p>
+              <p className="text-sm text-muted-foreground">No pending requests.</p>
             ) : (
-                <div className="space-y-4">
-                    {recentRequests.map((req) => (
-                        <div key={req.bookingId} className="flex items-center justify-between border-b pb-2 last:border-0">
-                            <div>
-                                <p className="font-medium text-sm">{req.title}</p>
-                                <p className="text-xs text-muted-foreground">{req.User.name} • {req.Resource.name}</p>
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                                {new Date(req.createdAt).toLocaleDateString()}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+              <div className="space-y-4">
+                {recentRequests.map((req) => (
+                  <div key={req.bookingId} className="flex items-center justify-between border-b pb-2 last:border-0">
+                    <div>
+                      <p className="font-medium text-sm">{req.title}</p>
+                      <p className="text-xs text-muted-foreground">{req.User.name} • {req.Resource.name}</p>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(req.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>

@@ -15,7 +15,8 @@ export default async function BookingsPage({
   searchParams: Promise<{ page?: string }>
 }) {
   const session = await getServerSession(authOptions)
-  if (!session) redirect("/login")
+  if (!session?.user?.organizationId) redirect("/login")
+  const orgId = session.user.organizationId
 
   const { page } = await searchParams
   const currentPage = Number(page) || 1
@@ -26,7 +27,7 @@ export default async function BookingsPage({
 
   const [bookings, totalCount] = await Promise.all([
     prisma.booking.findMany({
-      where: { organizationId: session.user.organizationId },
+      where: { organizationId: orgId },
       include: {
         User: { select: { name: true, email: true } },
         Resource: { select: { name: true, roomNumber: true } }
@@ -36,7 +37,7 @@ export default async function BookingsPage({
       skip: skip,
     }),
     prisma.booking.count({
-      where: { organizationId: session.user.organizationId }
+      where: { organizationId: orgId }
     })
   ])
 

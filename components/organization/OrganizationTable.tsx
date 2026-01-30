@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import {flexRender,getCoreRowModel,getFilteredRowModel,getPaginationRowModel,getSortedRowModel,useReactTable,SortingState,ColumnFiltersState} from "@tanstack/react-table"
-import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow} from "@/components/ui/table"
+import { toast } from "sonner"
+import { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable, SortingState, ColumnFiltersState } from "@tanstack/react-table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Organization } from "@/types/organization"
@@ -31,10 +32,11 @@ export default function OrganizationTable() {
       })
       if (!res.ok) throw new Error("Failed to delete")
 
+      toast.success("Organization deleted successfully")
       setData((prev) => prev.filter((org) => org.organizationId !== id))
     } catch (err) {
       console.error(err)
-      alert("Error deleting organization")
+      toast.error("Error deleting organization")
     } finally {
       setDeletingId(null)
     }
@@ -63,7 +65,7 @@ export default function OrganizationTable() {
           }
           className="max-w-sm"
         />
-        <OrganizationDialog type="add"/>
+        <OrganizationDialog type="add" />
       </div>
 
       <div className="rounded-md border">
