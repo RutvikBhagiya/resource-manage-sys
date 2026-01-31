@@ -3,8 +3,9 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { resourceUpdateSchema } from "@/lib/validators/resource.schema"
 import { validate } from "@/lib/utils/validate"
+import { auditExtension } from "@/lib/audit"
 
-export async function PATCH(req: Request,{params}: {params: Promise<{ id: string }>}) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const session = await getServerSession(authOptions)
 
@@ -32,15 +33,16 @@ export async function PATCH(req: Request,{params}: {params: Promise<{ id: string
         }
 
         const json = await req.json()
-        const result = await validate(resourceUpdateSchema,json)
+        const result = await validate(resourceUpdateSchema, json)
 
-        if(!result.success){
+        if (!result.success) {
             return result.response
         }
 
         const data = result.data
 
-        const updatedResource = await prisma.resource.update({
+        const extendedPrisma = prisma.$extends(auditExtension(Number(session.user.id)))
+        const updatedResource = await extendedPrisma.resource.update({
             where: { resourceId },
             data: {
                 name: data.name,
@@ -49,32 +51,32 @@ export async function PATCH(req: Request,{params}: {params: Promise<{ id: string
                 floorNumber: data.floorNumber,
                 roomNumber: data.roomNumber,
                 requiresApproval: data.requiresApproval,
-                isAvailable: data.isAvailable,                
+                isAvailable: data.isAvailable,
                 categoryId: data.categoryId,
                 buildingId: data.buildingId
             }
         })
 
         return Response.json(updatedResource)
-    } 
+    }
     catch (error) {
         console.error("Error updating resource:", error)
         return new Response("Failed to update resource", { status: 500 })
     }
 }
 
-export async function DELETE(req: Request, {params}: {params:Promise<{id: String}>}){
-    try{ 
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: String }> }) {
+    try {
         const session = await getServerSession(authOptions)
-        
-        if(!session){
+
+        if (!session) {
             return new Response("Unauthorized", { status: 401 })
         }
 
-        if(session.user.role !== "ADMIN"){
-            return new Response("Forbidden", { status: 403 })            
+        if (session.user.role !== "ADMIN") {
+            return new Response("Forbidden", { status: 403 })
         }
-        
+
         const { id } = await params
         const resourceId = Number(id)
         if (isNaN(resourceId)) {
@@ -82,8 +84,8 @@ export async function DELETE(req: Request, {params}: {params:Promise<{id: String
         }
 
         const resource = await prisma.resource.findUnique({
-            where: {resourceId},
-            select: {organizationId:true},
+            where: { resourceId },
+            select: { organizationId: true },
         })
 
         if (!resource) {
@@ -93,15 +95,16 @@ export async function DELETE(req: Request, {params}: {params:Promise<{id: String
             return new Response("Forbidden", { status: 403 })
         }
 
-        await prisma.resource.update({
+        const extendedPrisma = prisma.$extends(auditExtension(Number(session.user.id)))
+        await extendedPrisma.resource.update({
             where: { resourceId },
             data: { isActive: false },
         })
 
         return Response.json({ message: "Resource deleted successfully" })
     }
-    catch(error){
+    catch (error) {
         console.error("Error deleting resource:", error);
-        return Response.json("Failed to delete resource",{status: 500})
+        return Response.json("Failed to delete resource", { status: 500 })
     }
 }

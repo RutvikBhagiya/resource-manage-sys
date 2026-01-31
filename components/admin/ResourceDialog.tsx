@@ -134,7 +134,6 @@ export function ResourceDialog({ categories, buildings, initialData }: ResourceD
         )}
       </DialogTrigger>
 
-      {/* CHANGED: Added max-w and max-h classes for proper dialog scrolling */}
       <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
         <DialogHeader className="mb-4">
           <DialogTitle>{isEditing ? "Edit Resource" : "Add Resource"}</DialogTitle>

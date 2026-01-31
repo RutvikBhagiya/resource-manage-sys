@@ -2,13 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
-import { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable, SortingState, ColumnFiltersState } from "@tanstack/react-table"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { User } from "@/types/user"
 import { getUserColumns } from "./columns"
 import UserDialog from "./UserDialog"
+import { DataTable } from "@/components/ui/data-table"
 
 interface UserTableProps {
     apiEndpoint?: string
@@ -17,8 +14,6 @@ interface UserTableProps {
 
 export default function UserTable({ apiEndpoint = "/api/super-admin/users", readOnly = false }: UserTableProps) {
     const [data, setData] = useState<User[]>([])
-    const [sorting, setSorting] = useState<SortingState>([])
-    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [deletingId, setDeletingId] = useState<string | null>(null)
 
     useEffect(() => {
@@ -50,89 +45,14 @@ export default function UserTable({ apiEndpoint = "/api/super-admin/users", read
         }
     }
 
-    const table = useReactTable({
-        data,
-        columns: getUserColumns(handleDelete, deletingId, !readOnly),
-        state: { sorting, columnFilters },
-        onSortingChange: setSorting,
-        onColumnFiltersChange: setColumnFilters,
-        getCoreRowModel: getCoreRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-    })
+    const columns = getUserColumns(handleDelete, deletingId, !readOnly)
 
     return (
-        <div className="w-full">
-            <div className="flex items-center justify-between py-4">
-                <Input
-                    placeholder="Search name..."
-                    value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-                    onChange={(e) =>
-                        table.getColumn("name")?.setFilterValue(e.target.value)
-                    }
-                    className="max-w-sm"
-                />
+        <div className="w-full space-y-4">
+            <div className="flex items-center justify-end py-4">
                 {!readOnly && <UserDialog type="add" />}
             </div>
-
-            <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => (
-                                    <TableHead key={header.id}>
-                                        {flexRender(
-                                            header.column.columnDef.header,
-                                            header.getContext()
-                                        )}
-                                    </TableHead>
-                                ))}
-                            </TableRow>
-                        ))}
-                    </TableHeader>
-
-                    <TableBody>
-                        {table.getRowModel().rows.length ? (
-                            table.getRowModel().rows.map((row) => (
-                                <TableRow key={row.id}>
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={table.getAllColumns().length} className="text-center">
-                                    No users found
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
-
-            <div className="flex justify-end gap-2 py-4">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                >
-                    Previous
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                >
-                    Next
-                </Button>
-            </div>
+            <DataTable columns={columns} data={data} searchKey="name" placeholder="Search name..." />
         </div>
     )
 }

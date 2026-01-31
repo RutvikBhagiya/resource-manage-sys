@@ -3,16 +3,18 @@
 import { useState } from "react"
 import { Organization } from "@/types/organization"
 import { Button } from "@/components/ui/button"
-import {Dialog,DialogClose,DialogContent,DialogFooter,DialogHeader,DialogTitle,DialogTrigger} from "@/components/ui/dialog"
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 type Props = {
   organization?: Organization
-  type?: "edit" | "add"  
+  type?: "edit" | "add"
+  trigger?: React.ReactNode
 }
 
-export default function OrganizationDialog({ organization, type = "edit" }: Props) {
+export default function OrganizationDialog({ organization, type = "edit", trigger }: Props) {
   const [name, setName] = useState(organization?.name ?? "")
   const [email, setEmail] = useState(organization?.email ?? "")
   const [phone, setPhone] = useState(organization?.phone ?? "")
@@ -49,9 +51,11 @@ export default function OrganizationDialog({ organization, type = "edit" }: Prop
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button size="sm" variant={type === "edit" ? "outline" : "default"}>
-          {type === "edit" ? "Edit" : "Add Organization"}
-        </Button>
+        {trigger ? trigger : (
+          <Button size="sm" variant={type === "edit" ? "outline" : "default"}>
+            {type === "edit" ? "Edit" : "Add Organization"}
+          </Button>
+        )}
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-[420px]">
@@ -68,14 +72,18 @@ export default function OrganizationDialog({ organization, type = "edit" }: Prop
 
             <div className="grid gap-2">
               <Label>Type</Label>
-              <select value={orgType} onChange={e => setOrgType(e.target.value)}>
-                <option value="">Select Type</option>
-                <option value="COMPANY">Company</option>
-                <option value="COLLEGE">College</option>
-                <option value="HOSPITAL">Hospital</option>
-                <option value="GOVERNMENT">Government</option>
-                <option value="OTHER">Other</option>
-              </select>
+              <Select value={orgType} onValueChange={setOrgType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="COMPANY">Company</SelectItem>
+                  <SelectItem value="COLLEGE">College</SelectItem>
+                  <SelectItem value="HOSPITAL">Hospital</SelectItem>
+                  <SelectItem value="GOVERNMENT">Government</SelectItem>
+                  <SelectItem value="OTHER">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-2">

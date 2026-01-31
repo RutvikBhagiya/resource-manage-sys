@@ -15,4 +15,7 @@ export interface User {
         name: string
         type: string
     }
+    Department?: {
+        name: string
+    } | null
 }
