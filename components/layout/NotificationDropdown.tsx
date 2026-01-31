@@ -19,7 +19,7 @@ export function NotificationDropdown() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  
+
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const fetchNotifications = async () => {
@@ -27,8 +27,8 @@ export function NotificationDropdown() {
       const res = await fetch("/api/notifications")
       if (res.ok) {
         const data = await res.json()
-        setNotifications(data.notifications)
-        setUnreadCount(data.unreadCount)
+        setNotifications(data)
+        setUnreadCount(data.filter((n: Notification) => !n.isRead).length)
       }
     } catch (error) {
       console.error("Failed to fetch notifications")
@@ -37,31 +37,36 @@ export function NotificationDropdown() {
 
   useEffect(() => {
     fetchNotifications()
-    
+
     const interval = setInterval(fetchNotifications, 60000)
     return () => clearInterval(interval)
   }, [])
 
-  const toggleDropdown = async () => {
-    const newState = !isOpen
-    setIsOpen(newState)
+  const markAllAsRead = async () => {
+    if (unreadCount === 0) return
 
-    if (newState && unreadCount > 0) {
-      setUnreadCount(0) 
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
+    setUnreadCount(0)
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
 
-      const unreadIds = notifications
-        .filter(n => !n.isRead)
-        .map(n => n.notificationId)
+    const unreadIds = notifications
+      .filter(n => !n.isRead)
+      .map(n => n.notificationId)
 
-      if (unreadIds.length > 0) {
+    if (unreadIds.length > 0) {
+      try {
         await fetch("/api/notifications", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ notificationIds: unreadIds })
         })
+      } catch (error) {
+        console.error("Failed to mark notifications as read")
       }
     }
+  }
+
+  const toggleDropdown = () => {
+    setIsOpen(!isOpen)
   }
 
   useEffect(() => {
@@ -85,12 +90,12 @@ export function NotificationDropdown() {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <button 
+      <button
         onClick={toggleDropdown}
         className="relative rounded-2xl bg-white/40 dark:bg-white/5 p-3 text-slate-500 dark:text-slate-400 transition-all hover:bg-white/60 dark:hover:bg-white/10 hover:text-violet-600 dark:hover:text-violet-400 hover:shadow-lg hover:shadow-violet-500/10 hover:-translate-y-0.5"
       >
         <Bell className="size-5" />
-        
+
         {unreadCount > 0 && (
           <span className="absolute right-3 top-3 size-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900 animate-pulse" />
         )}
@@ -100,9 +105,19 @@ export function NotificationDropdown() {
         <div className="absolute right-0 mt-2 w-80 md:w-96 origin-top-right rounded-2xl bg-white dark:bg-slate-900 shadow-xl ring-1 ring-black/5 dark:ring-white/10 focus:outline-none z-50 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Notifications</h3>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              {notifications.length} recent
-            </span>
+            <div className="flex gap-2 items-center">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {notifications.length} recent
+              </span>
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  className="text-xs text-violet-600 hover:text-violet-700 font-medium"
+                >
+                  Mark all read
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="max-h-[400px] overflow-y-auto">
@@ -112,8 +127,8 @@ export function NotificationDropdown() {
               </div>
             ) : (
               notifications.map((item) => (
-                <div 
-                  key={item.notificationId} 
+                <div
+                  key={item.notificationId}
                   className={`px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 transition border-b border-gray-100 dark:border-gray-800 last:border-0 ${!item.isRead ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
                 >
                   <div className="flex gap-3">
