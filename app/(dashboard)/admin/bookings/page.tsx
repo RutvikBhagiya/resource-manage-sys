@@ -2,30 +2,24 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { BookingTable } from "@/components/booking/BookingTable"
+import { BookingView } from "@/components/booking/BookingView"
 
 const ITEMS_PER_PAGE = 10
 
-export default async function BookingsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ page?: string }>
-}) {
+export default async function BookingsPage({searchParams,}: {searchParams: Promise<{ page?: string }>}) {
+
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) redirect("/login")
   const orgId = session.user.organizationId
 
   const { page } = await searchParams
   const currentPage = Number(page) || 1
-  // Security Check: Prevent negative pages
+  
   if (currentPage < 1) redirect("/admin/bookings?page=1")
 
   const skip = (currentPage - 1) * ITEMS_PER_PAGE
 
-  const [bookings, totalCount] = await Promise.all([
+  const [bookings, totalCount, allBookings] = await Promise.all([
     prisma.booking.findMany({
       where: { organizationId: orgId },
       include: {
@@ -38,62 +32,52 @@ export default async function BookingsPage({
     }),
     prisma.booking.count({
       where: { organizationId: orgId }
+    }),
+    
+    prisma.booking.findMany({
+      where: { organizationId: orgId },
+      select: {
+        bookingId: true,
+        title: true,
+        startDateTime: true,
+        endDateTime: true,
+        status: true,
+        User: { select: { name: true } },
+        Resource: { select: { name: true } }
+      },
+      orderBy: { startDateTime: 'desc' },
+      take: 1000 
     })
   ])
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
 
-  // Security Check: If user manually types ?page=100 and it's empty, redirect back
-  // Only redirect if we actually have data (totalCount > 0) but went too far
   if (currentPage > totalPages && totalCount > 0) {
     redirect(`/admin/bookings?page=${totalPages}`)
   }
 
+  const calendarEvents = allBookings.map(b => ({
+    id: b.bookingId,
+    title: b.title,
+    start: b.startDateTime,
+    end: b.endDateTime,
+    resource: b.Resource.name,
+    user: b.User.name,
+    status: b.status
+  }))
+
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Bookings</h1>
-      </div>
-
-      <div className="space-y-4">
-        <BookingTable data={bookings} mode="admin" />
-
-        {/* INDUSTRIAL STANDARD PAGINATION LOGIC */}
-        {/* Only show pagination bar if there is more than 1 page */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-end space-x-2 py-4 px-4 border bg-card rounded-xl shadow-sm">
-            <div className="text-xs text-muted-foreground mr-auto">
-              Page {currentPage} of {totalPages}
-            </div>
-
-            {/* PREVIOUS BUTTON */}
-            {currentPage <= 1 ? (
-              <Button variant="outline" size="sm" disabled>
-                <ChevronLeft className="h-4 w-4 mr-2" /> Previous
-              </Button>
-            ) : (
-              <Button variant="outline" size="sm" asChild>
-                <Link href={`/admin/bookings?page=${currentPage - 1}`}>
-                  <ChevronLeft className="h-4 w-4 mr-2" /> Previous
-                </Link>
-              </Button>
-            )}
-
-            {/* NEXT BUTTON */}
-            {currentPage >= totalPages ? (
-              <Button variant="outline" size="sm" disabled>
-                Next <ChevronRight className="h-4 w-4 ml-2" />
-              </Button>
-            ) : (
-              <Button variant="outline" size="sm" asChild>
-                <Link href={`/admin/bookings?page=${currentPage + 1}`}>
-                  Next <ChevronRight className="h-4 w-4 ml-2" />
-                </Link>
-              </Button>
-            )}
-          </div>
-        )}
-      </div>
+      <BookingView
+        initialBookings={bookings}
+        calendarEvents={calendarEvents}
+        mode="admin"
+        pagination={{
+          currentPage,
+          totalPages,
+          baseUrl: "/admin/bookings"
+        }}
+      />
     </div>
   )
 }
