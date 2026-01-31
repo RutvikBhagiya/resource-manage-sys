@@ -5,20 +5,21 @@ import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 import { useAuth } from "@/hooks/useAuth"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Package, Calendar, LogOut, Building2, Users, FileText, ChevronLeft, ChevronRight, Shield } from "lucide-react"
+import { LayoutDashboard, Package, Calendar, LogOut, Building2, Users, FileText, ChevronLeft, ChevronRight, Logs, Settings } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import {Tooltip,TooltipContent,TooltipProvider,TooltipTrigger} from "@/components/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 const SIDEBAR_ITEMS = [
   { title: "Dashboard", href: "/", icon: LayoutDashboard, roles: ["USER", "ADMIN", "SUPER_ADMIN", "STAFF"] },
   { title: "Organization", href: "/super-admin/organizations", icon: Building2, roles: ["SUPER_ADMIN"] },
-  { title: "Resources", href: "/admin/resources", icon: Package, roles: ["USER", "STAFF", "ADMIN"] },  
+  { title: "Resources", href: "/admin/resources", icon: Package, roles: ["USER", "STAFF", "ADMIN"] },
   { title: "Bookings", href: "/bookings", icon: Calendar, roles: ["USER", "STAFF", "ADMIN"] },
   { title: "Staff Portal", href: "/staff", icon: Users, roles: ["STAFF"] },
   { title: "Users", href: "/admin/users", icon: Users, roles: ["SUPER_ADMIN", "ADMIN"] },
-  { title: "Reports", href: "/admin/reports", icon: FileText, roles: ["ADMIN", "SUPER_ADMIN"] },
+  { title: "Logs", href: "/super-admin/logs", icon: Logs, roles: ["SUPER_ADMIN"] },
+  { title: "Settings", href: "/settings", icon: Settings, roles: ["USER", "ADMIN", "SUPER_ADMIN", "STAFF"] },
 ]
 
 interface SidebarProps {
@@ -72,16 +73,17 @@ export function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
             if (!item.roles.includes(userRole)) return null
 
             let href = item.href
-            
+
             if (item.title === "Dashboard" && userRole === "USER") href = "/user"
             if (item.title === "Dashboard" && userRole === "ADMIN") href = "/admin"
             if (item.title === "Dashboard" && userRole === "STAFF") href = "/staff"
             if (item.title === "Dashboard" && userRole === "SUPER_ADMIN") href = "/super-admin"
             if (item.title === "Bookings" && userRole === "USER") href = "/user/bookings"
             if (item.title === "Bookings" && userRole === "ADMIN") href = "/admin/bookings"
+            if (item.title === "Users" && userRole === "SUPER_ADMIN") href = "/super-admin/users"
 
-            const isActive = item.title === "Dashboard" 
-              ? pathname === href 
+            const isActive = item.title === "Dashboard"
+              ? pathname === href
               : pathname === href || pathname?.startsWith(href + "/")
 
             return (
@@ -91,8 +93,8 @@ export function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
                     href={href}
                     className={cn(
                       "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors",
-                      isActive 
-                        ? "bg-primary text-primary-foreground shadow-md" 
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-md"
                         : "hover:bg-muted text-muted-foreground hover:text-foreground",
                       isCollapsed && "justify-center px-0"
                     )}

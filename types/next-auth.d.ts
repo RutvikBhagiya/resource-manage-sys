@@ -9,6 +9,7 @@ declare module "next-auth" {
       organizationId?: number | null
       organizationName?: string | null
       organizationType?: string | null
+      phone?: string | null
     } & DefaultSession["user"]
   }
 }
@@ -20,5 +21,6 @@ declare module "next-auth/jwt" {
     organizationId?: number | null
     organizationName?: string | null
     organizationType?: string | null
+    phone?: string | null
   }
 }

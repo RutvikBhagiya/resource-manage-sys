@@ -14,6 +14,7 @@ interface AppUser {
   organizationName: string | null;
   organizationType: string | null;
   image: string | null;
+  phone: string | null;
 }
 
 export const authOptions: NextAuthOptions = {
@@ -58,14 +59,19 @@ export const authOptions: NextAuthOptions = {
           image: user.image ?? null,
           organizationId: user.organizationId,
           organizationName: user.Organization?.name,
-          organizationType: user.Organization?.type
+          organizationType: user.Organization?.type,
+          phone: user.phone,
         };
       }
     })
   ],
 
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      if (trigger === "update" && session) {
+        return { ...token, ...session };
+      }
+
       if (user) {
         const u = user as AppUser;
 
@@ -75,18 +81,22 @@ export const authOptions: NextAuthOptions = {
         token.organizationName = u.organizationName ?? null;
         token.organizationType = u.organizationType ?? null;
         token.image = u.image;
+        token.phone = u.phone;
       }
       return token;
     },
 
     async session({ session, token }) {
       if (session.user) {
+        session.user.name = token.name as string;
+        session.user.email = token.email as string;
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
         session.user.organizationId = token.organizationId as number | null;
         session.user.organizationName = token.organizationName as string | null;
         session.user.organizationType = token.organizationType as string | null;
         session.user.image = token.image as string | null;
+        session.user.phone = token.phone as string | null;
       }
       return session;
     }
