@@ -8,19 +8,12 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form"
+import {Form,FormControl,FormField,FormItem,FormLabel,FormMessage} from "@/components/ui/form"
 import { useAuth } from "@/hooks/useAuth"
 
 const profileSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
-    phone: z.string().optional().or(z.literal("")),
+    phone: z.string().optional().or(z.literal(""))
 })
 
 type ProfileFormValues = z.infer<typeof profileSchema>
@@ -34,8 +27,8 @@ export function ProfileForm() {
         resolver: zodResolver(profileSchema),
         defaultValues: {
             name: user?.name || "",
-            phone: user?.phone || "",
-        },
+            phone: user?.phone || ""
+        }
     })
 
     async function onSubmit(data: ProfileFormValues) {
@@ -44,12 +37,11 @@ export function ProfileForm() {
             const res = await fetch("/api/users/me", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
+                body: JSON.stringify(data)
             })
 
             if (!res.ok) throw new Error("Failed to update profile")
 
-            // Update session with new data
             await update({
                 name: data.name,
                 phone: data.phone,

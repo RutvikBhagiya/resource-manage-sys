@@ -16,7 +16,7 @@ export function useAuth() {
     phone: (session?.user as any)?.phone,
     isAuthenticated: !!session,
     isLoading: status === "loading",
-    status, // "authenticated", "loading", "unauthenticated"
-    update, // Expose update function
+    status,
+    update,
   };
 }

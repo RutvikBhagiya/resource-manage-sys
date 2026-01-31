@@ -40,7 +40,6 @@ export function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
           isCollapsed ? "w-20" : "w-72"
         )}
       >
-        {/* Toggle Button */}
         <Button
           variant="outline"
           size="icon"
@@ -50,7 +49,6 @@ export function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
           {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
 
-        {/* Header */}
         <div className={cn("flex h-20 items-center px-6 transition-all", isCollapsed && "justify-center px-0")}>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg">
@@ -67,7 +65,6 @@ export function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
 
         <Separator className="opacity-50" />
 
-        {/* Navigation Items */}
         <div className="flex-1 overflow-y-auto py-4 px-3 space-y-2 no-scrollbar">
           {SIDEBAR_ITEMS.map((item) => {
             if (!item.roles.includes(userRole)) return null

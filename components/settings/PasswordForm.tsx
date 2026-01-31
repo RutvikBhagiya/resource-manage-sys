@@ -8,14 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form"
+import {Form,FormControl,FormField,FormItem,FormLabel,FormMessage} from "@/components/ui/form"
 
 const passwordSchema = z.object({
     currentPassword: z.string().min(1, "Current password is required"),
@@ -39,8 +32,8 @@ export function PasswordForm() {
         defaultValues: {
             currentPassword: "",
             newPassword: "",
-            confirmPassword: "",
-        },
+            confirmPassword: ""
+        }
     })
 
     async function onSubmit(data: PasswordFormValues) {
@@ -51,8 +44,8 @@ export function PasswordForm() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     currentPassword: data.currentPassword,
-                    newPassword: data.newPassword,
-                }),
+                    newPassword: data.newPassword
+                })
             })
 
             if (!res.ok) {

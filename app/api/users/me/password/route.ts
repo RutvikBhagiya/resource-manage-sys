@@ -7,7 +7,7 @@ import { successResponse, errorResponse } from "@/lib/api-response"
 
 const updatePasswordSchema = z.object({
   currentPassword: z.string().min(1),
-  newPassword: z.string().min(6),
+  newPassword: z.string().min(6)
 })
 
 export async function PATCH(req: Request) {
@@ -30,7 +30,7 @@ export async function PATCH(req: Request) {
     const user = await prisma.user.findUnique({
       where: {
         id: parseInt(session.user.id),
-      },
+      }
     })
 
     if (!user) {
@@ -47,11 +47,11 @@ export async function PATCH(req: Request) {
 
     await prisma.user.update({
       where: {
-        id: parseInt(session.user.id),
+        id: parseInt(session.user.id)
       },
       data: {
-        password: hashedPassword,
-      },
+        password: hashedPassword
+      }
     })
 
     return successResponse(null, "Password updated successfully")
