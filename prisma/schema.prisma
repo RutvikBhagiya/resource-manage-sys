@@ -38,7 +38,8 @@ model User {
   role                Role                  @default(USER)
   isActive            Boolean               @default(true)
   createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
+
+
 
   accounts            Account[]
   sessions            Session[]
@@ -372,4 +373,14 @@ enum AuditEntity {
   MAINTENANCE
   ORGANIZATION
   DEPARTMENT
+  BUILDING
+  RESOURCE_CATEGORY
+  RESOURCE_AMENITY
+  RESOURCE_AVAILABILITY
+  STORAGE_UNIT
+  COMPARTMENT
+  BOOKING_APPROVAL
+  NOTIFICATION
+  ACCOUNT
+  SESSION
 }
