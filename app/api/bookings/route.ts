@@ -4,15 +4,17 @@ import { prisma } from "@/lib/prisma"
 import { validate } from "@/lib/utils/validate"
 import { bookingCreateSchema } from "@/lib/validators/booking.schema"
 import { BookingStatus } from "@/generated/prisma/enums"
+import { auditExtension } from "@/lib/audit"
+import { successResponse, errorResponse } from "@/lib/api-response"
 
 export async function POST(req: Request) {
     try {
         const session = await getServerSession(authOptions)
-        if (!session) return new Response("Unauthorized", { status: 401 })
+        if (!session) return errorResponse("Unauthorized", 401)
 
         const json = await req.json()
         const result = validate(bookingCreateSchema, json)
-        if (!result.success) return result.response
+        if (!result.success) return errorResponse("Validation failed", 400, result.response)
 
         const data = result.data
 
@@ -21,7 +23,7 @@ export async function POST(req: Request) {
         const endDateTime = new Date(data.endDateTime);
 
         if (startDateTime >= endDateTime) {
-             return new Response("End time must be after start time", { status: 400 })
+            return errorResponse("End time must be after start time", 400)
         }
 
         const resource = await prisma.resource.findUnique({
@@ -30,17 +32,17 @@ export async function POST(req: Request) {
                 requiresApproval: true,
                 organizationId: true,
                 isActive: true,
-                name: true 
+                name: true
             }
         });
 
         if (!resource || !resource.isActive) {
-        return new Response("Resource not found or inactive", { status: 404 });
+            return errorResponse("Resource not found or inactive", 404);
         }
 
         //Ensure User is from Resource's Organization 
         if (resource.organizationId !== session.user.organizationId) {
-             return new Response("You cannot book resources from another organization", { status: 403 });
+            return errorResponse("You cannot book resources from another organization", 403);
         }
 
         const conflict = await prisma.booking.findFirst({
@@ -57,12 +59,13 @@ export async function POST(req: Request) {
         });
 
         if (conflict) {
-            return new Response("Resource is already booked for this time slot", { status: 409 });
+            return errorResponse("Resource is already booked for this time slot", 409);
         }
 
         const initialStatus = resource.requiresApproval ? BookingStatus.PENDING : BookingStatus.APPROVED;
 
-        const booking = await prisma.booking.create({
+        const extendedPrisma = prisma.$extends(auditExtension(Number(session.user.id)))
+        const booking = await extendedPrisma.booking.create({
             data: {
                 organizationId: session.user.organizationId,
                 resourceId: data.resourceId,
@@ -77,35 +80,36 @@ export async function POST(req: Request) {
             }
         })
 
-        return Response.json(booking, { status: 201 })
-    } 
+        return successResponse(booking, "Booking created successfully", 201)
+    }
     catch (error) {
         console.error("Create booking error:", error)
-        return new Response("Failed to create booking", { status: 500 })
+        return errorResponse("Failed to create booking", 500, error)
     }
 }
 
 export async function GET() {
-    try{
+    try {
         const session = await getServerSession(authOptions)
-        if (!session) return new Response("Unauthorized", { status: 401 })
+        if (!session) return errorResponse("Unauthorized", 401)
 
         const bookings = await prisma.booking.findMany({
             where: { userId: Number(session.user.id) },
-            include: { Resource: {
-                            select: {
-                                name: true,
-                                roomNumber: true
-                            }
-                        } 
-                    },
+            include: {
+                Resource: {
+                    select: {
+                        name: true,
+                        roomNumber: true
+                    }
+                }
+            },
             orderBy: { createdAt: "desc" },
         })
 
-        return Response.json(bookings)
+        return successResponse(bookings, "Bookings retrieved successfully")
     }
-    catch(error){
+    catch (error) {
         console.error("Error retrieving bookings:", error);
-        return Response.json("Failed to retrieve bookings",{status: 500})
+        return errorResponse("Failed to retrieve bookings", 500, error)
     }
 }

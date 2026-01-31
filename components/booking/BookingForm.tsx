@@ -49,13 +49,10 @@ export function BookingForm({ resources, userId }: BookingFormProps) {
         body: JSON.stringify(data),
       })
 
-      if (!res.ok) {
-        const errorText = await res.text()
-        if (res.status === 409) {
-          setServerError("Conflict: This time slot is already booked. Please choose another time.")
-        } else {
-          setServerError(`Failed: ${errorText}`)
-        }
+      const result = await res.json()
+
+      if (!res.ok || !result.success) {
+        setServerError(result.message || "Failed to create booking")
         return
       }
 
@@ -139,7 +136,11 @@ export function BookingForm({ resources, userId }: BookingFormProps) {
                     <Input
                       type="datetime-local"
                       {...field}
-                      value={field.value instanceof Date ? field.value.toISOString().slice(0, 16) : ""}
+                      value={field.value instanceof Date ? (() => {
+                        const d = field.value;
+                        const pad = (n: number) => n < 10 ? '0' + n : n;
+                        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                      })() : ""}
                       onChange={(e) => {
                         const date = new Date(e.target.value);
                         if (!isNaN(date.getTime())) {
@@ -163,7 +164,11 @@ export function BookingForm({ resources, userId }: BookingFormProps) {
                     <Input
                       type="datetime-local"
                       {...field}
-                      value={field.value instanceof Date ? field.value.toISOString().slice(0, 16) : ""}
+                      value={field.value instanceof Date ? (() => {
+                        const d = field.value;
+                        const pad = (n: number) => n < 10 ? '0' + n : n;
+                        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                      })() : ""}
                       onChange={(e) => {
                         const date = new Date(e.target.value);
                         if (!isNaN(date.getTime())) {

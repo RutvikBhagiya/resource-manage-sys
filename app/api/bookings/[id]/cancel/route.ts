@@ -2,9 +2,10 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { BookingStatus } from "@/generated/prisma/enums"
+import { auditExtension } from "@/lib/audit"
 
-export async function PATCH(req: Request,{ params }: { params: Promise<{ id: string }> }) {
-    try{
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+    try {
         const session = await getServerSession(authOptions)
         if (!session) return new Response("Unauthorized", { status: 401 })
 
@@ -26,15 +27,16 @@ export async function PATCH(req: Request,{ params }: { params: Promise<{ id: str
         if (booking.status !== BookingStatus.PENDING)
             return new Response("Cannot cancel this booking", { status: 400 })
 
-        const updated = await prisma.booking.update({
+        const extendedPrisma = prisma.$extends(auditExtension(Number(session.user.id)))
+        const updated = await extendedPrisma.booking.update({
             where: { bookingId },
             data: { status: BookingStatus.CANCELLED }
         })
 
         return Response.json(updated)
     }
-    catch(error){
+    catch (error) {
         console.error("Error cancelling booking:", error);
-        return Response.json("Failed to cancel booking",{status: 500})
+        return Response.json("Failed to cancel booking", { status: 500 })
     }
 }

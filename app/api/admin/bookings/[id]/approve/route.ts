@@ -1,30 +1,32 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { BookingStatus,ApprovalStatus,NotificationType } from "@/generated/prisma/enums" 
+import { BookingStatus, ApprovalStatus, NotificationType } from "@/generated/prisma/enums"
 import { sendNotification } from "@/lib/notifications"
+import { auditExtension } from "@/lib/audit"
+import { successResponse, errorResponse } from "@/lib/api-response"
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-    try{
+    try {
         const session = await getServerSession(authOptions)
-        if (!session) return new Response("Unauthorized", { status: 401 })
+        if (!session) return errorResponse("Unauthorized", 401)
 
         if (session.user.role !== "ADMIN")
-            return new Response("Forbidden", { status: 403 })
+            return errorResponse("Forbidden", 403)
 
         const { id } = await params
         const bookingId = Number(id)
 
         const booking = await prisma.booking.findUnique({
             where: { bookingId },
-            include: {Resource: true}
+            include: { Resource: true }
         })
 
         if (!booking)
-            return new Response("Booking not found", { status: 404 })
+            return errorResponse("Booking not found", 404)
 
         if (booking.status !== BookingStatus.PENDING)
-            return new Response("Booking not pending", { status: 400 })
+            return errorResponse("Booking not pending", 400)
 
         const conflict = await prisma.booking.findFirst({
             where: {
@@ -39,20 +41,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         });
 
         if (conflict) {
-            return new Response(
-                "Cannot approve: This time slot was just taken by another approved booking.", 
-                { status: 409 }
+            return errorResponse(
+                "Cannot approve: This time slot was just taken by another approved booking.",
+                409
             );
         }
 
-        const result = await prisma.$transaction([
-            prisma.booking.update({
+        const extendedPrisma = prisma.$extends(auditExtension(Number(session.user.id)))
+        const result = await extendedPrisma.$transaction([
+            extendedPrisma.booking.update({
                 where: { bookingId },
                 data: { status: BookingStatus.APPROVED }
             }),
 
-            prisma.bookingApproval.upsert({
-                where: { bookingId: bookingId }, 
+            extendedPrisma.bookingApproval.upsert({
+                where: { bookingId: bookingId },
                 update: {
                     status: ApprovalStatus.APPROVED,
                     approverId: Number(session.user.id),
@@ -65,7 +68,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                     approvedAt: new Date()
                 }
             })
-            ])
+        ])
         await sendNotification({
             userId: booking.userId,
             title: "Booking Approved",
@@ -73,10 +76,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
             type: NotificationType.SUCCESS
         })
 
-        return Response.json({booking: result[0], approval: result[1]})
+        return successResponse({ booking: result[0], approval: result[1] }, "Booking approved successfully")
     }
-    catch(error){
+    catch (error) {
         console.error("Error approving booking:", error);
-        return Response.json("Failed to approve booking",{status: 500})
+        return errorResponse("Failed to approve booking", 500, error)
     }
 }

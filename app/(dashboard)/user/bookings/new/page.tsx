@@ -7,13 +7,13 @@ import { redirect } from "next/navigation"
 export default async function NewBookingPage() {
   const session = await getServerSession(authOptions)
 
-  if (!session) redirect("/login")
+  if (!session?.user?.organizationId) redirect("/login")
 
   const resources = await prisma.resource.findMany({
     where: {
       organizationId: session.user.organizationId,
-      isActive: true, 
-      isAvailable: true 
+      isActive: true,
+      isAvailable: true
     },
     select: {
       resourceId: true,
@@ -34,11 +34,11 @@ export default async function NewBookingPage() {
           Select a resource and time slot. Some resources may require approval.
         </p>
       </div>
-      
+
       <div className="bg-card border rounded-xl p-6 shadow-sm">
-        <BookingForm 
-          resources={resources} 
-          userId={Number(session.user.id)} 
+        <BookingForm
+          resources={resources}
+          userId={Number(session.user.id)}
         />
       </div>
     </div>

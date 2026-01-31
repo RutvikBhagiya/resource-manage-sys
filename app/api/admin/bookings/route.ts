@@ -2,20 +2,21 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { BookingStatus } from "@/generated/prisma/enums"
+import { successResponse, errorResponse } from "@/lib/api-response"
 
 export async function GET(req: Request) {
-    try{
+    try {
         const session = await getServerSession(authOptions)
-        if (!session) return new Response("Unauthorized", { status: 401 })
+        if (!session) return errorResponse("Unauthorized", 401)
 
         if (session.user.role !== "ADMIN")
-            return new Response("Forbidden", { status: 403 })
+            return errorResponse("Forbidden", 403)
 
         const { searchParams } = new URL(req.url)
         const status = searchParams.get("status") as BookingStatus | null
 
         const bookings = await prisma.booking.findMany({
-            where: { 
+            where: {
                 organizationId: session.user.organizationId as number,
                 ...(status ? { status } : {})
             },
@@ -27,10 +28,10 @@ export async function GET(req: Request) {
             orderBy: { createdAt: "desc" }
         })
 
-        return Response.json(bookings)
+        return successResponse(bookings, "Bookings retrieved successfully")
     }
-    catch(error){
+    catch (error) {
         console.error("Error retrieving bookings:", error);
-        return Response.json("Failed to retrieve bookings",{status: 500})
+        return errorResponse("Failed to retrieve bookings", 500, error)
     }
 }
