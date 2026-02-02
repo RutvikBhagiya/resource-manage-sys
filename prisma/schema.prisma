@@ -10,13 +10,13 @@ datasource db {
 model Organization {
   organizationId   Int                @id @default(autoincrement())
   name             String             @db.VarChar(200)
-  type             OrganizationType
   email            String?            @db.VarChar(100)
   phone            String?            @db.VarChar(20)
   address          String?
   isActive         Boolean            @default(true)
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
+  type             OrganizationType
 
   Booking          Booking[]
   Building         Building[]
@@ -33,36 +33,33 @@ model User {
   name                String                @db.VarChar(100)
   email               String                @unique @db.VarChar(100)
   password            String                @db.VarChar(255)
-  image               String?
   phone               String?               @db.VarChar(20)
-  role                Role                  @default(USER)
   isActive            Boolean               @default(true)
   createdAt           DateTime              @default(now())
-
-
+  updatedAt           DateTime              @default(now())
+  image               String?
+  role                Role                  @default(USER)
 
   accounts            Account[]
-  sessions            Session[]
-
+  auditLogs           AuditLog[]
   Booking             Booking[]
   BookingApproval     BookingApproval[]
   MaintenanceLog      MaintenanceLog[]
   MaintenanceSchedule MaintenanceSchedule[]
   Notification        Notification[]
+  sessions            Session[]
   Department          Department?           @relation(fields: [departmentId], references: [departmentId])
-  Organization        Organization?          @relation(fields: [organizationId], references: [organizationId])
-  auditLogs           AuditLog[]
+  Organization        Organization?         @relation(fields: [organizationId], references: [organizationId])
 }
 
 model Department {
   departmentId   Int          @id @default(autoincrement())
   organizationId Int
   name           String       @db.VarChar(100)
-  headUserId     Int?
   isActive       Boolean      @default(true)
   createdAt      DateTime     @default(now())
-
   Organization   Organization @relation(fields: [organizationId], references: [organizationId])
+
   User           User[]
 }
 
@@ -70,12 +67,11 @@ model Building {
   buildingId     Int          @id @default(autoincrement())
   organizationId Int
   name           String       @db.VarChar(100)
-  address        String?
   totalFloors    Int?
   isActive       Boolean      @default(true)
   createdAt      DateTime     @default(now())
-  
   Organization   Organization @relation(fields: [organizationId], references: [organizationId])
+
   Resource       Resource[]
 }
 
@@ -133,44 +129,44 @@ model ResourceAmenity {
 model ResourceAvailability {
   availabilityId Int       @id @default(autoincrement())
   resourceId     Int
-  dayOfWeek      DayOfWeek
   startTime      DateTime
   endTime        DateTime
   isAvailable    Boolean   @default(true)
+  dayOfWeek      DayOfWeek
 
   Resource       Resource  @relation(fields: [resourceId], references: [resourceId])
 }
 
 model Booking {
-  bookingId       Int               @id @default(autoincrement())
+  bookingId       Int              @id @default(autoincrement())
   organizationId  Int
   resourceId      Int
   userId          Int
-  title           String            @db.VarChar(200)
+  title           String           @db.VarChar(200)
   purpose         String?
   startDateTime   DateTime
   endDateTime     DateTime
   attendeesCount  Int?
-  status          BookingStatus     @default(PENDING)
-  priority        BookingPriority   @default(MEDIUM)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  status          BookingStatus    @default(PENDING)
+  priority        BookingPriority  @default(MEDIUM)
 
-  Organization    Organization      @relation(fields: [organizationId], references: [organizationId])
-  Resource        Resource          @relation(fields: [resourceId], references: [resourceId])
-  User            User              @relation(fields: [userId], references: [id])
-  BookingApproval BookingApproval[]
+  Organization    Organization     @relation(fields: [organizationId], references: [organizationId])
+  Resource        Resource         @relation(fields: [resourceId], references: [resourceId])
+  User            User             @relation(fields: [userId], references: [id])
+  BookingApproval BookingApproval?
 }
 
 model BookingApproval {
   approvalId Int            @id @default(autoincrement())
   bookingId  Int            @unique
   approverId Int?
-  status     ApprovalStatus @default(PENDING)
   comments   String?
   approvedAt DateTime?
+  status     ApprovalStatus @default(PENDING)
 
-  User       User?           @relation(fields: [approverId], references: [id])
+  User       User?          @relation(fields: [approverId], references: [id])
   Booking    Booking        @relation(fields: [bookingId], references: [bookingId])
 }
 
@@ -202,11 +198,11 @@ model MaintenanceSchedule {
   scheduleId     Int               @id @default(autoincrement())
   resourceId     Int
   assignedTo     Int?
-  type           MaintenanceType
   scheduledDate  DateTime
-  status         MaintenanceStatus @default(SCHEDULED)
   notes          String?
   createdAt      DateTime          @default(now())
+  type           MaintenanceType
+  status         MaintenanceStatus @default(SCHEDULED)
 
   MaintenanceLog MaintenanceLog[]
   User           User?             @relation(fields: [assignedTo], references: [id])
@@ -223,7 +219,7 @@ model MaintenanceLog {
   actionsTaken        String?
   cost                Decimal?            @db.Decimal(10, 2)
   completedAt         DateTime?
-
+  
   User                User                @relation(fields: [performedBy], references: [id])
   Resource            Resource            @relation(fields: [resourceId], references: [resourceId])
   MaintenanceSchedule MaintenanceSchedule @relation(fields: [scheduleId], references: [scheduleId])
@@ -234,10 +230,10 @@ model Notification {
   userId         Int
   title          String           @db.VarChar(200)
   message        String
-  type           NotificationType
   isRead         Boolean          @default(false)
   createdAt      DateTime         @default(now())
-  
+  type           NotificationType
+
   User           User             @relation(fields: [userId], references: [id])
 }
 
@@ -253,7 +249,7 @@ model AuditLog {
   userAgent String?
   createdAt DateTime    @default(now())
 
-  User User @relation(fields: [userId], references: [id])
+  User      User        @relation(fields: [userId], references: [id])
 }
 
 model Account {
@@ -280,7 +276,7 @@ model Session {
   sessionToken String   @unique
   userId       Int
   expires      DateTime
-
+  
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
