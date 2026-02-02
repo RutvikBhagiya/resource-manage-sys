@@ -54,6 +54,7 @@ export async function GET() {
         if (!session) return new Response("Unauthorized", { status: 401 })
 
         const resources = await prisma.resource.findMany({
+            where: { isActive: true },
             orderBy: { createdAt: "desc" },
             include: {
                 Building: true,

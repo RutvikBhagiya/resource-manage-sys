@@ -1,13 +1,24 @@
+import { ResourceCategory } from "./resource-category"
+import { Building } from "./building"
+import { ResourceAmenity } from "./resource-amenity"
+
 export interface Resource {
   resourceId: number
+  organizationId: number
+  categoryId: number
+  buildingId: number
   name: string
-  capacity?: number | null
+  floorNumber?: number
+  roomNumber?: string
+  capacity?: number
+  description?: string
   requiresApproval: boolean
-  createdAt: string
-  Building: {
-    name: string
-  }
-  ResourceCategory: {
-    name: string
-  }
+  isAvailable: boolean
+  isActive: boolean
+  createdAt: Date
+  updatedAt: Date
+
+  ResourceCategory?: ResourceCategory
+  Building?: Building
+  ResourceAmenity?: ResourceAmenity[]
 }

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 import { useAuth } from "@/hooks/useAuth"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Package, Calendar, LogOut, Building2, Users, FileText, ChevronLeft, ChevronRight, Logs, Settings } from "lucide-react"
+import { LayoutDashboard, Package, Calendar, LogOut, Building2, Users, ChevronLeft, ChevronRight, Logs, Settings,Landmark, Building } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -13,7 +13,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 const SIDEBAR_ITEMS = [
   { title: "Dashboard", href: "/", icon: LayoutDashboard, roles: ["USER", "ADMIN", "SUPER_ADMIN", "STAFF"] },
-  { title: "Organization", href: "/super-admin/organizations", icon: Building2, roles: ["SUPER_ADMIN"] },
+  { title: "Organizations", href: "/super-admin/organizations", icon: Building2, roles: ["SUPER_ADMIN"] },
+  { title: "Departments", href: "/admin/departments", icon: Landmark, roles: ["ADMIN"] },
+  { title: "Buildings", href: "/admin/buildings", icon: Building, roles: ["ADMIN"] },
   { title: "Resources", href: "/admin/resources", icon: Package, roles: ["USER", "STAFF", "ADMIN"] },
   { title: "Bookings", href: "/bookings", icon: Calendar, roles: ["USER", "STAFF", "ADMIN"] },
   { title: "Staff Portal", href: "/staff", icon: Users, roles: ["STAFF"] },

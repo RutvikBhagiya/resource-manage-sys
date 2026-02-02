@@ -1,117 +1,140 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import {flexRender,getCoreRowModel,getFilteredRowModel,getPaginationRowModel,getSortedRowModel,useReactTable,SortingState,ColumnFiltersState} from "@tanstack/react-table"
-import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow} from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import { Resource } from "@/types/resource"
-import { columns } from "./columns"
+import { getResourceColumns } from "./columns"
+import { DataTable } from "@/components/ui/data-table"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
+import { ResourceDialog } from "./ResourceDialog"
+import { CategoryManagerDialog } from "./CategoryManagerDialog"
+import { AmenityManagerDialog } from "./AmenityManagerDialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 
 export default function ResourceTable() {
   const [data, setData] = useState<Resource[]>([])
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setColumnFilters] =
-    useState<ColumnFiltersState>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(null)
+  const [selectedResourceForAmenities, setSelectedResourceForAmenities] = useState<Resource | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+
+  const fetchResources = async () => {
+    setIsLoading(true)
+    try {
+      const res = await fetch("/api/admin/resources")
+      if (res.ok) {
+        const json = await res.json()
+        setData(json)
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to load resources")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   useEffect(() => {
-    fetch("/api/admin/resources")
-      .then(res => res.json())
-      .then(setData)
+    fetchResources()
   }, [])
 
-  const table = useReactTable({
-    data,
-    columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+  const handleCreate = () => {
+    setSelectedResource(null)
+    setIsDialogOpen(true)
+  }
 
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+  const handleEdit = (resource: Resource) => {
+    setSelectedResource(resource)
+    setIsDialogOpen(true)
+  }
 
-    state: {
-      sorting,
-      columnFilters
+  const handleViewAmenities = (resource: Resource) => {
+    setSelectedResourceForAmenities(resource)
+  }
+
+  const handleDeleteClick = (id: number) => {
+    setDeletingId(id)
+    setDeleteConfirmOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!deletingId) return
+
+    try {
+      const res = await fetch(`/api/admin/resources/${deletingId}`, {
+        method: "DELETE",
+      })
+
+      if (!res.ok) {
+        const error = await res.text()
+        throw new Error(error || "Failed to delete")
+      }
+
+      toast.success("Resource deleted successfully")
+      fetchResources()
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to delete resource")
+    } finally {
+      setDeletingId(null)
+      setDeleteConfirmOpen(false)
     }
-  })
+  }
+
+  const columns = getResourceColumns(handleEdit, handleDeleteClick, deletingId, handleViewAmenities)
+
+  if (isLoading) {
+    return <div className="text-center py-10">Loading resources...</div>
+  }
 
   return (
-    <div className="w-full">
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex gap-2">
+          <CategoryManagerDialog />
+        </div>
+        <Button onClick={handleCreate}>
+          <Plus className="mr-2 h-4 w-4" /> Add Resource
+        </Button>
+      </div>
 
-      <div className="py-4">
-        <Input
-          placeholder="Search name..."
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-          onChange={(e) =>
-            table.getColumn("name")?.setFilterValue(e.target.value)
-          }
-          className="max-w-sm"
+      <DataTable columns={columns} data={data} searchKey="name" placeholder="Search resources..." />
+
+      <ResourceDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        resource={selectedResource}
+        onSuccess={fetchResources}
+      />
+
+      {selectedResourceForAmenities && (
+        <AmenityManagerDialog
+          open={!!selectedResourceForAmenities}
+          onOpenChange={(open) => !open && setSelectedResourceForAmenities(null)}
+          resourceId={selectedResourceForAmenities.resourceId}
+          resourceName={selectedResourceForAmenities.name}
         />
-      </div>
+      )}
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map(headerGroup => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map(header => (
-                  <TableHead key={header.id}>
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-
-          <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map(row => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map(cell => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="text-center">
-                  No resources found
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      <div className="flex justify-end gap-2 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Previous
-        </Button>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Next
-        </Button>
-      </div>
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the resource.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
