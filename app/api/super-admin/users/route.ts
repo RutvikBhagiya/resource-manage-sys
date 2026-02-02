@@ -34,16 +34,32 @@ export async function POST(req: Request) {
 
         const hashedPassword = await bcrypt.hash(data.password, 10)
 
-        const extendedPrisma = prisma.$extends(auditExtension(Number(session.user.id)))
-        const user = await extendedPrisma.user.create({
+        const userData: any = {
+            name: data.name,
+            email: data.email,
+            password: hashedPassword,
+            role: data.role,
+            phone: data.phone,
+            image: data.image
+        }
+
+        if (data.organizationId) {
+            userData.Organization = {
+                connect: { organizationId: Number(data.organizationId) }
+            }
+        }
+
+        const user = await prisma.user.create({
+            data: userData
+        })
+
+        await prisma.auditLog.create({
             data: {
-                name: data.name,
-                email: data.email,
-                password: hashedPassword,
-                role: data.role,
-                organizationId: data.organizationId ? Number(data.organizationId) : null,
-                phone: data.phone,
-                image: data.image
+                userId: Number(session.user.id),
+                action: "CREATE",
+                entity: "USER",
+                entityId: user.id,
+                newData: user as any
             }
         })
 

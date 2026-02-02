@@ -11,17 +11,10 @@ export async function GET(req: Request) {
             return new NextResponse("Unauthorized", { status: 401 })
         }
 
-        // Ensure user is an Admin or Super Admin
         if (session.user.role !== "ADMIN" && session.user.role !== "SUPER_ADMIN") {
             return new NextResponse("Forbidden", { status: 403 })
         }
 
-        // If Super Admin, they might want to see all users (handled by super-admin routes), 
-        // but if they use this route, we can restrict to their org or show error.
-        // For now, let's assume this is strictly for Organization Admins.
-        // Actually, let's match the logic: fetch users for the admin's organization.
-
-        // Must have an organizationId
         const currentUser = await prisma.user.findUnique({
             where: { id: parseInt(session.user.id) },
             select: { organizationId: true }

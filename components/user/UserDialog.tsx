@@ -156,7 +156,9 @@ export default function UserDialog({ user, type = "edit" }: Props) {
                         <DialogClose asChild>
                             <Button type="button" variant="outline">Cancel</Button>
                         </DialogClose>
-                        <Button type="submit" disabled={loading}>{type === "edit" ? "Save" : "Add"}</Button>
+                        <Button type="submit" disabled={loading}>
+                            {loading ? "Saving..." : (type === "edit" ? "Save" : "Add User")}
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
