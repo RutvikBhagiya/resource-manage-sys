@@ -20,32 +20,39 @@ export default function OrganizationDialog({ organization, type = "edit", trigge
   const [phone, setPhone] = useState(organization?.phone ?? "")
   const [address, setAddress] = useState(organization?.address ?? "")
   const [orgType, setOrgType] = useState(organization?.type ?? "")
+  const [isLoading, setIsLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setIsLoading(true)
 
-    const body = {
-      name,
-      email,
-      phone,
-      address,
-      type: orgType,
-    }
+    try {
+      const body = {
+        name,
+        email,
+        phone,
+        address,
+        type: orgType,
+      }
 
-    if (type === "edit") {
-      await fetch(`/api/super-admin/organizations/${organization?.organizationId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      })
-    } else {
-      await fetch(`/api/super-admin/organizations`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      })
+      if (type === "edit") {
+        await fetch(`/api/super-admin/organizations/${organization?.organizationId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
+      } else {
+        await fetch(`/api/super-admin/organizations`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
+      }
+      window.location.reload()
+    } catch (error) {
+      console.error(error)
+      setIsLoading(false)
     }
-    window.location.reload()
   }
 
   return (
@@ -106,7 +113,9 @@ export default function OrganizationDialog({ organization, type = "edit", trigge
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button type="submit">{type === "edit" ? "Save" : "Add"}</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Saving..." : (type === "edit" ? "Save" : "Add")}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
