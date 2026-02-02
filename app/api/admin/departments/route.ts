@@ -4,49 +4,56 @@ import { prisma } from "@/lib/prisma"
 import { validate } from "@/lib/utils/validate"
 import { departmentCreateSchema } from "@/lib/validators/department.schema"
 
-export async function POST(req : Request){
-    try{
+export async function POST(req: Request) {
+    try {
         const session = await getServerSession(authOptions)
 
-        if(!session){
-            return new Response("Unauthorized",{status:401})
+        if (!session) {
+            return new Response("Unauthorized", { status: 401 })
         }
 
-        if(session.user.role !== "ADMIN"){
-            return new Response("Forbidden", {status:403})
+        if (session.user.role !== "ADMIN") {
+            return new Response("Forbidden", { status: 403 })
         }
 
         const json = await req.json()
         const result = validate(departmentCreateSchema, json)
 
-        if(!result.success){
+        if (!result.success) {
             return result.response
         }
         const data = result.data
 
         const department = await prisma.department.create({
-            data : {
-                ...data,
+            data: {
+                name: data.name,
+                isActive: data.isActive,
                 organizationId: session?.user.organizationId as number
             }
         })
 
-        return Response.json(department, {status:201})
+        return Response.json(department, { status: 201 })
     }
-    catch(error){
+    catch (error) {
         console.error("Error Creating department:", error);
-        return Response.json("Failed to create department",{status: 500})
+        return Response.json("Failed to create department", { status: 500 })
     }
 }
 
-export async function GET(){
-    try{
-        const departments = await prisma.department.findMany()
+export async function GET() {
+    try {
+        const departments = await prisma.department.findMany({
+            include: {
+                _count: {
+                    select: { User: true }
+                }
+            }
+        })
 
         return Response.json(departments)
     }
-    catch(error){
+    catch (error) {
         console.error("Error fetching departments:", error);
-        return Response.json("Failed to fetch departments",{status: 500})
+        return Response.json("Failed to fetch departments", { status: 500 })
     }
 }
