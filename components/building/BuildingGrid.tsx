@@ -6,12 +6,16 @@ import { BuildingDialog } from "./BuildingDialog"
 import { Button } from "@/components/ui/button"
 import { Plus, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import {AlertDialog,AlertDialogCancel,AlertDialogContent,AlertDialogDescription,AlertDialogFooter,AlertDialogHeader,AlertDialogTitle} from "@/components/ui/alert-dialog"
+import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Building } from "@/types/building"
 
-export function BuildingGrid() {
-    const [buildings, setBuildings] = useState<Building[]>([])
-    const [isLoading, setIsLoading] = useState(true)
+interface BuildingGridProps {
+    initialData?: Building[]
+}
+
+export function BuildingGrid({ initialData }: BuildingGridProps) {
+    const [buildings, setBuildings] = useState<Building[]>(initialData || [])
+    const [isLoading, setIsLoading] = useState(!initialData)
     const [isDeleting, setIsDeleting] = useState(false)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null)
@@ -33,8 +37,10 @@ export function BuildingGrid() {
     }
 
     useEffect(() => {
-        fetchBuildings()
-    }, [])
+        if (!initialData) {
+            fetchBuildings()
+        }
+    }, [initialData])
 
     const handleCreate = () => {
         setSelectedBuilding(null)

@@ -14,9 +14,13 @@ import { ResourceAvailabilityManager } from "@/components/admin/resources/Resour
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 
-export default function ResourceTable() {
-  const [data, setData] = useState<Resource[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+interface ResourceTableProps {
+  initialData?: Resource[]
+}
+
+export default function ResourceTable({ initialData }: ResourceTableProps) {
+  const [data, setData] = useState<Resource[]>(initialData || [])
+  const [isLoading, setIsLoading] = useState(!initialData)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null)
   const [selectedResourceForAmenities, setSelectedResourceForAmenities] = useState<Resource | null>(null)
@@ -41,8 +45,10 @@ export default function ResourceTable() {
   }
 
   useEffect(() => {
-    fetchResources()
-  }, [])
+    if (!initialData) {
+      fetchResources()
+    }
+  }, [initialData])
 
   const handleCreate = () => {
     setSelectedResource(null)

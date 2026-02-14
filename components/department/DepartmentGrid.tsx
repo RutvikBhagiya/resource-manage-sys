@@ -6,12 +6,16 @@ import { DepartmentDialog } from "./DepartmentDialog"
 import { Button } from "@/components/ui/button"
 import { Plus, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import {AlertDialog,AlertDialogCancel,AlertDialogContent,AlertDialogDescription,AlertDialogFooter,AlertDialogHeader,AlertDialogTitle} from "@/components/ui/alert-dialog"
+import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Department } from "@/types/department"
 
-export function DepartmentGrid() {
-    const [departments, setDepartments] = useState<Department[]>([])
-    const [isLoading, setIsLoading] = useState(true)
+interface DepartmentGridProps {
+    initialData?: Department[]
+}
+
+export function DepartmentGrid({ initialData }: DepartmentGridProps) {
+    const [departments, setDepartments] = useState<Department[]>(initialData || [])
+    const [isLoading, setIsLoading] = useState(!initialData)
     const [isDeleting, setIsDeleting] = useState(false)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null)
@@ -33,8 +37,10 @@ export function DepartmentGrid() {
     }
 
     useEffect(() => {
-        fetchDepartments()
-    }, [])
+        if (!initialData) {
+            fetchDepartments()
+        }
+    }, [initialData])
 
     const handleCreate = () => {
         setSelectedDepartment(null)
