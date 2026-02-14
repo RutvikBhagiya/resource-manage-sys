@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge"
 import { BookingActions } from "@/components/booking/BookingActions"
 import { CancelBookingButton } from "@/components/booking/CancelBookingButton"
 
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Info } from "lucide-react"
+
 export interface BookingData {
     bookingId: number
     title: string
@@ -17,6 +20,11 @@ export interface BookingData {
     purpose?: string | null
     User?: { name: string; email: string }
     Resource?: { name: string; roomNumber?: string | null }
+    BookingApproval?: {
+        status: string
+        comments?: string | null
+        approvedAt?: string | Date | null
+    } | null
 }
 
 const getStatusColor = (status: BookingStatus) => {
@@ -67,11 +75,42 @@ export const getBookingColumns = (mode: "admin" | "user"): ColumnDef<BookingData
         {
             accessorKey: "status",
             header: "Status",
-            cell: ({ row }) => (
-                <Badge variant="outline" className={cn("capitalize shadow-none", getStatusColor(row.original.status))}>
-                    {row.original.status.toLowerCase()}
-                </Badge>
-            ),
+            cell: ({ row }) => {
+                const status = row.original.status
+                const approval = row.original.BookingApproval
+
+                return (
+                    <div className="flex items-center gap-2">
+                        <Badge variant="outline" className={cn("capitalize shadow-none", getStatusColor(status))}>
+                            {status.toLowerCase()}
+                        </Badge>
+                        {status === "REJECTED" && approval?.comments && (
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger>
+                                        <Info className="h-4 w-4 text-red-500" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Reason: {approval.comments}</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        )}
+                        {status === "APPROVED" && approval?.approvedAt && (
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger>
+                                        <Info className="h-4 w-4 text-green-600/50" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Approved on {format(new Date(approval.approvedAt), "MMM d, h:mm a")}</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        )}
+                    </div>
+                )
+            },
         },
         {
             id: "actions",

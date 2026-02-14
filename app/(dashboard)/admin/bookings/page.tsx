@@ -6,7 +6,7 @@ import { BookingView } from "@/components/booking/BookingView"
 
 const ITEMS_PER_PAGE = 10
 
-export default async function BookingsPage({searchParams,}: {searchParams: Promise<{ page?: string }>}) {
+export default async function BookingsPage({ searchParams, }: { searchParams: Promise<{ page?: string }> }) {
 
   const session = await getServerSession(authOptions)
   if (!session?.user?.organizationId) redirect("/login")
@@ -14,7 +14,7 @@ export default async function BookingsPage({searchParams,}: {searchParams: Promi
 
   const { page } = await searchParams
   const currentPage = Number(page) || 1
-  
+
   if (currentPage < 1) redirect("/admin/bookings?page=1")
 
   const skip = (currentPage - 1) * ITEMS_PER_PAGE
@@ -24,7 +24,8 @@ export default async function BookingsPage({searchParams,}: {searchParams: Promi
       where: { organizationId: orgId },
       include: {
         User: { select: { name: true, email: true } },
-        Resource: { select: { name: true, roomNumber: true } }
+        Resource: { select: { name: true, roomNumber: true } },
+        BookingApproval: true
       },
       orderBy: { createdAt: "desc" },
       take: ITEMS_PER_PAGE,
@@ -33,7 +34,7 @@ export default async function BookingsPage({searchParams,}: {searchParams: Promi
     prisma.booking.count({
       where: { organizationId: orgId }
     }),
-    
+
     prisma.booking.findMany({
       where: { organizationId: orgId },
       select: {
@@ -46,7 +47,7 @@ export default async function BookingsPage({searchParams,}: {searchParams: Promi
         Resource: { select: { name: true } }
       },
       orderBy: { startDateTime: 'desc' },
-      take: 1000 
+      take: 1000
     })
   ])
 

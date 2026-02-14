@@ -11,6 +11,7 @@ import { ResourceDialog } from "./ResourceDialog"
 import { CategoryManagerDialog } from "./CategoryManagerDialog"
 import { AmenityManagerDialog } from "./AmenityManagerDialog"
 import { ResourceAvailabilityManager } from "@/components/admin/resources/ResourceAvailabilityManager"
+import { StorageManagerDialog } from "@/components/admin/storage/StorageManagerDialog"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 
@@ -25,6 +26,7 @@ export default function ResourceTable({ initialData }: ResourceTableProps) {
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null)
   const [selectedResourceForAmenities, setSelectedResourceForAmenities] = useState<Resource | null>(null)
   const [selectedResourceForAvailability, setSelectedResourceForAvailability] = useState<Resource | null>(null)
+  const [selectedResourceForStorage, setSelectedResourceForStorage] = useState<Resource | null>(null)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
@@ -97,7 +99,11 @@ export default function ResourceTable({ initialData }: ResourceTableProps) {
     setSelectedResourceForAvailability(resource)
   }
 
-  const columns = getResourceColumns(handleEdit, handleDeleteClick, deletingId, handleViewAmenities, handleViewAvailability)
+  const handleViewStorage = (resource: Resource) => {
+    setSelectedResourceForStorage(resource)
+  }
+
+  const columns = getResourceColumns(handleEdit, handleDeleteClick, deletingId, handleViewAmenities, handleViewAvailability, handleViewStorage)
 
   if (isLoading) {
     return <div className="text-center py-10">Loading resources...</div>
@@ -144,6 +150,15 @@ export default function ResourceTable({ initialData }: ResourceTableProps) {
             <ResourceAvailabilityManager resourceId={selectedResourceForAvailability.resourceId} />
           </DialogContent>
         </Dialog>
+      )}
+
+      {selectedResourceForStorage && (
+        <StorageManagerDialog
+          open={!!selectedResourceForStorage}
+          onOpenChange={(open) => !open && setSelectedResourceForStorage(null)}
+          resourceId={selectedResourceForStorage.resourceId}
+          resourceName={selectedResourceForStorage.name}
+        />
       )}
 
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>

@@ -22,6 +22,7 @@ export default async function UserBookingsPage() {
           roomNumber: true
         }
       },
+      BookingApproval: true,
     },
     orderBy: {
       createdAt: "desc"

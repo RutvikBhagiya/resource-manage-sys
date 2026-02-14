@@ -141,7 +141,12 @@ export async function POST(req: Request) {
                 endDateTime: endDateTime,
                 attendeesCount: data.attendeesCount,
                 priority: data.priority,
-                status: initialStatus
+                status: initialStatus,
+                BookingApproval: resource.requiresApproval ? {
+                    create: {
+                        status: "PENDING"
+                    }
+                } : undefined
             }
         })
 
