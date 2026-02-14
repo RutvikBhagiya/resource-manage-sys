@@ -6,6 +6,7 @@ export interface User {
     email: string
     role: Role
     organizationId: number | null
+    departmentId: number | null
     phone: string | null
     image: string | null
     isActive: boolean

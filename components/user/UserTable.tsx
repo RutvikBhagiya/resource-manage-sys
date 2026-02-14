@@ -10,24 +10,27 @@ import { DataTable } from "@/components/ui/data-table"
 interface UserTableProps {
     apiEndpoint?: string
     readOnly?: boolean
+    initialData?: User[]
 }
 
-export default function UserTable({ apiEndpoint = "/api/super-admin/users", readOnly = false }: UserTableProps) {
-    const [data, setData] = useState<User[]>([])
+export default function UserTable({ apiEndpoint = "/api/super-admin/users", readOnly = false, initialData }: UserTableProps) {
+    const [data, setData] = useState<User[]>(initialData || [])
     const [deletingId, setDeletingId] = useState<string | null>(null)
 
     useEffect(() => {
-        fetch(apiEndpoint)
-            .then((res) => res.json())
-            .then(setData)
-            .catch((err) => console.error(err))
-    }, [])
+        if (!initialData) {
+            fetch(apiEndpoint)
+                .then((res) => res.json())
+                .then(setData)
+                .catch((err) => console.error(err))
+        }
+    }, [apiEndpoint, initialData])
 
     const handleDelete = async (id: string) => {
         try {
             setDeletingId(id)
 
-            const res = await fetch(`/api/super-admin/users/${id}`, {
+            const res = await fetch(`${apiEndpoint}/${id}`, {
                 method: "DELETE",
             })
             if (!res.ok) {

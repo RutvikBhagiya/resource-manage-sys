@@ -4,13 +4,23 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 export function CancelBookingButton({ bookingId }: { bookingId: number }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleCancel = async () => {
-    if (!confirm("Are you sure you want to cancel this booking?")) return;
-
     setIsLoading(true);
     try {
       // FIX: Changed method from "POST" to "PATCH" to match your API
@@ -36,12 +46,29 @@ export function CancelBookingButton({ bookingId }: { bookingId: number }) {
   };
 
   return (
-    <button
-      onClick={handleCancel}
-      disabled={isLoading}
-      className="text-red-600 hover:text-red-800 text-xs font-medium underline disabled:opacity-50"
-    >
-      {isLoading ? "Canceling..." : "Cancel Request"}
-    </button>
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <button
+          disabled={isLoading}
+          className="text-red-600 hover:text-red-800 text-xs font-medium underline disabled:opacity-50"
+        >
+          {isLoading ? "Canceling..." : "Cancel Request"}
+        </button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Cancel Booking Request</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to cancel this booking request? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Keep Booking</AlertDialogCancel>
+          <AlertDialogAction onClick={handleCancel} className="bg-red-600 hover:bg-red-700 text-white">
+            Yes, Cancel It
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

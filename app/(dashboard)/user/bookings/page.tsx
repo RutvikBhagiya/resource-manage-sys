@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { BookingView } from "@/components/booking/BookingView"
+import { BookingTable } from "@/components/booking/BookingTable"
 import { redirect } from "next/navigation"
 
 export default async function UserBookingsPage() {
@@ -11,58 +11,29 @@ export default async function UserBookingsPage() {
     redirect("/login")
   }
 
-  const [bookings, calendarData] = await Promise.all([
-    prisma.booking.findMany({
-      where: {
-        userId: Number(session.user.id)
+  const bookings = await prisma.booking.findMany({
+    where: {
+      userId: Number(session.user.id)
+    },
+    include: {
+      Resource: {
+        select: {
+          name: true,
+          roomNumber: true
+        }
       },
-      include: {
-        Resource: {
-          select: {
-            name: true,
-            roomNumber: true
-          }
-        },
-      },
-      orderBy: {
-        createdAt: "desc"
-      }
-    }),
-    prisma.booking.findMany({
-      where: {
-        userId: Number(session.user.id)
-      },
-      select: {
-        bookingId: true,
-        title: true,
-        startDateTime: true,
-        endDateTime: true,
-        status: true,
-        User: { select: { name: true } },
-        Resource: { select: { name: true } }
-      },
-      orderBy: { startDateTime: 'desc' },
-      take: 1000
-    })
-  ])
-
-  const calendarEvents = calendarData.map(b => ({
-    id: b.bookingId,
-    title: b.title,
-    start: b.startDateTime,
-    end: b.endDateTime,
-    resource: b.Resource.name,
-    user: b.User.name,
-    status: b.status
-  }))
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
+  })
 
   return (
-    <div className="space-y-8 p-6">
-      <BookingView
-        initialBookings={bookings}
-        calendarEvents={calendarEvents}
-        mode="user"
-      />
+    <div className="space-y-6 p-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">My Bookings</h1>
+      </div>
+      <BookingTable data={bookings} mode="user" />
     </div>
   )
 }

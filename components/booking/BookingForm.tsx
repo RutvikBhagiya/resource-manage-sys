@@ -29,9 +29,12 @@ export function BookingForm({ resources, userId }: BookingFormProps) {
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
 
+  const defaultResId = resources.length === 1 ? resources[0].resourceId : undefined
+
   const form = useForm<BookingCreateFormValues>({
     resolver: zodResolver(bookingCreateSchema),
     defaultValues: {
+      resourceId: defaultResId,
       title: "",
       purpose: "",
       attendeesCount: 0,

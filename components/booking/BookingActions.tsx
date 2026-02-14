@@ -5,6 +5,18 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { RejectModal } from "./RejectModal";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 interface BookingActionsProps {
   bookingId: number;
 }
@@ -15,8 +27,6 @@ export function BookingActions({ bookingId }: BookingActionsProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleApprove = async () => {
-    if (!confirm("Are you sure you want to approve this booking?")) return;
-
     setIsLoading(true);
     try {
       const res = await fetch(`/api/admin/bookings/${bookingId}/approve`, {
@@ -49,7 +59,7 @@ export function BookingActions({ bookingId }: BookingActionsProps) {
       });
 
       if (!res.ok) {
-        toast.error("Failed to reject booking.");
+        toast.error("Failed to reject bookings.");
         return;
       }
 
@@ -67,13 +77,30 @@ export function BookingActions({ bookingId }: BookingActionsProps) {
   return (
     <>
       <div className="flex justify-end gap-2">
-        <button
-          onClick={handleApprove}
-          disabled={isLoading}
-          className="px-3 py-1 text-xs font-semibold text-green-700 bg-green-50 rounded hover:bg-green-100 border border-green-200 transition disabled:opacity-50"
-        >
-          {isLoading ? "Processing..." : "Approve"}
-        </button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              disabled={isLoading}
+              className="px-3 py-1 text-xs font-semibold text-green-700 bg-green-50 rounded hover:bg-green-100 border border-green-200 transition disabled:opacity-50"
+            >
+              {isLoading ? "Processing..." : "Approve"}
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Approve Booking</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to approve this booking? This will notify the user.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleApprove} className="bg-green-600 hover:bg-green-700 text-white">
+                Approve
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <button
           onClick={() => setIsModalOpen(true)}

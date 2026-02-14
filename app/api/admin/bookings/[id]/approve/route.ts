@@ -41,10 +41,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         });
 
         if (conflict) {
-            return errorResponse(
-                "Cannot approve: This time slot was just taken by another approved booking.",
-                409
-            );
+            return errorResponse("Cannot approve: This time slot was just taken by another approved booking.",409);
         }
 
         const extendedPrisma = prisma.$extends(auditExtension(Number(session.user.id)))
