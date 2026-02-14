@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 import { useAuth } from "@/hooks/useAuth"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Package, Calendar, LogOut, Building2, Users, ChevronLeft, ChevronRight, Logs, Settings,Landmark, Building } from "lucide-react"
+import { LayoutDashboard, Package, Calendar, LogOut, Building2, Users, ChevronLeft, ChevronRight, Logs, Settings, Landmark, Building } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -78,6 +78,7 @@ export function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
             if (item.title === "Dashboard" && userRole === "STAFF") href = "/staff"
             if (item.title === "Dashboard" && userRole === "SUPER_ADMIN") href = "/super-admin"
             if (item.title === "Bookings" && userRole === "USER") href = "/user/bookings"
+            if (item.title === "Resources" && userRole === "USER") href = "/user/resources"
             if (item.title === "Bookings" && userRole === "ADMIN") href = "/admin/bookings"
             if (item.title === "Users" && userRole === "SUPER_ADMIN") href = "/super-admin/users"
 

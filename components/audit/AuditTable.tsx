@@ -4,24 +4,15 @@ import { useEffect, useState } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { columns, AuditLog } from "./columns"
 
-export default function AuditTable() {
-    const [data, setData] = useState<AuditLog[]>([])
-    const [loading, setLoading] = useState(true)
+interface AuditTableProps {
+    initialData: AuditLog[]
+}
 
-    useEffect(() => {
-        fetch("/api/super-admin/audit-logs")
-            .then((res) => res.json())
-            .then((data) => {
-                setData(data)
-                setLoading(false)
-            })
-            .catch((err) => {
-                console.error("Failed to fetch logs", err)
-                setLoading(false)
-            })
-    }, [])
+export default function AuditTable({ initialData }: AuditTableProps) {
+    const [data, setData] = useState<AuditLog[]>(initialData)
 
-    if (loading) return <div>Loading logs...</div>
+
+
 
     return (
         <div className="w-full">

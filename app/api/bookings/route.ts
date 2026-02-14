@@ -62,6 +62,71 @@ export async function POST(req: Request) {
             return errorResponse("Resource is already booked for this time slot", 409);
         }
 
+        // Check Resource Availability
+        const dayOfWeekMap = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+        const dayOfWeek = dayOfWeekMap[startDateTime.getDay()];
+
+        const availabilityRules = await prisma.resourceAvailability.findMany({
+            where: {
+                resourceId: data.resourceId,
+                dayOfWeek: dayOfWeek as any // Cast to enum
+            }
+        });
+
+        // If rules exist, ensuring the booking falls within one of them
+        // If no rules exist, we assume it's NOT available (or fully available depending on policy, but usually strict)
+        // Let's assume strict: if rules exist, must match. If no rules, maybe default to 9-5 or unavailable?
+        // Based on previous conv, user wants to "set the time of availability", implying it's restricted.
+        // So if no rules for that day => Not available.
+
+        let isWithinAvailability = false;
+
+        if (availabilityRules.length > 0) {
+            // Helper to get minutes from midnight for comparison
+            // Booking times are Local (from User Input parsed by Server)
+            const getLocalMinutes = (date: Date) => date.getHours() * 60 + date.getMinutes();
+            // Rule times are stored as UTC (e.g. 09:00Z) so we use UTC getters to retrieve "09:00"
+            const getRuleMinutes = (date: Date) => date.getUTCHours() * 60 + date.getUTCMinutes();
+
+            const bookingStartMins = getLocalMinutes(startDateTime);
+            const bookingEndMins = getLocalMinutes(endDateTime);
+
+            for (const rule of availabilityRules) {
+                const ruleStartMins = getRuleMinutes(rule.startTime);
+                const ruleEndMins = getRuleMinutes(rule.endTime);
+
+                if (bookingStartMins >= ruleStartMins && bookingEndMins <= ruleEndMins) {
+                    isWithinAvailability = true;
+                    break;
+                }
+            }
+
+            if (!isWithinAvailability) {
+                return errorResponse(`Resource is not available at this time.`, 400);
+            }
+
+        } else {
+            // If no rules are set for this day, is it closed?
+            // Usually yes for a "Resource Management System" where you define availability.
+            // But if I enforce strictly, existing resources without rules become unusable.
+            // Let's check if the resource has ANY availability rules.
+            // If it has rules for other days but not today -> Closed today.
+            // If it has NO rules at all -> Maybe fully open? Or Closed?
+            // Let's assume strict for now as that's safer.
+            const anyRules = await prisma.resourceAvailability.findFirst({
+                where: { resourceId: data.resourceId }
+            });
+
+            if (anyRules) {
+                // It has rules, but none for today -> Closed today
+                return errorResponse(`Resource is not available on ${dayOfWeek}`, 400);
+            }
+            // If NO rules exist at all, we might allow it (legacy behavior) or block it. 
+            // Given the user explicitly asked to "implement that table ... to set the time", 
+            // it suggests we should respect it. I'll allow if NO rules exist to prevent breaking everything immediately,
+            // but if rules exist, strict enforcement.
+        }
+
         const initialStatus = resource.requiresApproval ? BookingStatus.PENDING : BookingStatus.APPROVED;
 
         const extendedPrisma = prisma.$extends(auditExtension(Number(session.user.id)))

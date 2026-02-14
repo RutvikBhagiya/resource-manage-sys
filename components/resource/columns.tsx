@@ -3,14 +3,15 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { Resource } from "@/types/resource"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, Edit, Trash2, List } from "lucide-react"
+import { ArrowUpDown, Edit, Trash2, List, Clock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 export const getResourceColumns = (
   onEdit: (resource: Resource) => void,
   onDelete: (id: number) => void,
   deletingId: number | null,
-  onViewAmenities: (resource: Resource) => void
+  onViewAmenities: (resource: Resource) => void,
+  onViewAvailability: (resource: Resource) => void
 ): ColumnDef<Resource>[] => [
     {
       accessorKey: "name",
@@ -69,6 +70,10 @@ export const getResourceColumns = (
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onViewAmenities(resource)} title="View Amenities">
               <List className="h-4 w-4 text-muted-foreground" />
               <span className="sr-only">View Amenities</span>
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onViewAvailability(resource)} title="Manage Availability">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="sr-only">Manage Availability</span>
             </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(resource)}>
               <Edit className="h-4 w-4 text-muted-foreground" />

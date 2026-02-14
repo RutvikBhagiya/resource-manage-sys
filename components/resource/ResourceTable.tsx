@@ -10,6 +10,8 @@ import { Plus } from "lucide-react"
 import { ResourceDialog } from "./ResourceDialog"
 import { CategoryManagerDialog } from "./CategoryManagerDialog"
 import { AmenityManagerDialog } from "./AmenityManagerDialog"
+import { ResourceAvailabilityManager } from "@/components/admin/resources/ResourceAvailabilityManager"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 
 export default function ResourceTable() {
@@ -18,6 +20,7 @@ export default function ResourceTable() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null)
   const [selectedResourceForAmenities, setSelectedResourceForAmenities] = useState<Resource | null>(null)
+  const [selectedResourceForAvailability, setSelectedResourceForAvailability] = useState<Resource | null>(null)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
@@ -84,7 +87,11 @@ export default function ResourceTable() {
     }
   }
 
-  const columns = getResourceColumns(handleEdit, handleDeleteClick, deletingId, handleViewAmenities)
+  const handleViewAvailability = (resource: Resource) => {
+    setSelectedResourceForAvailability(resource)
+  }
+
+  const columns = getResourceColumns(handleEdit, handleDeleteClick, deletingId, handleViewAmenities, handleViewAvailability)
 
   if (isLoading) {
     return <div className="text-center py-10">Loading resources...</div>
@@ -119,6 +126,20 @@ export default function ResourceTable() {
         />
       )}
 
+      {selectedResourceForAvailability && (
+        <Dialog open={!!selectedResourceForAvailability} onOpenChange={(open) => !open && setSelectedResourceForAvailability(null)}>
+          <DialogContent className="max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Manage Availability: {selectedResourceForAvailability.name}</DialogTitle>
+              <DialogDescription>
+                Configure when this resource is available for booking.
+              </DialogDescription>
+            </DialogHeader>
+            <ResourceAvailabilityManager resourceId={selectedResourceForAvailability.resourceId} />
+          </DialogContent>
+        </Dialog>
+      )}
+
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -138,3 +159,4 @@ export default function ResourceTable() {
     </div>
   )
 }
+

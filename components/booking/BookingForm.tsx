@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -66,6 +66,48 @@ export function BookingForm({ resources, userId }: BookingFormProps) {
     }
   }
 
+
+  const [availability, setAvailability] = useState<any[] | null>(null)
+  const [loadingAvailability, setLoadingAvailability] = useState(false)
+
+  // Fetch availability when resource changes
+  const onResourceChange = async (resourceId: number) => {
+    form.setValue("resourceId", resourceId)
+    setAvailability(null)
+    setLoadingAvailability(true)
+    try {
+      const res = await fetch(`/api/admin/resources/${resourceId}/availability`)
+      if (res.ok) {
+        const data = await res.json()
+        setAvailability(data.length > 0 ? data : null)
+      }
+    } catch (error) {
+      console.error("Failed to fetch availability", error)
+    } finally {
+      setLoadingAvailability(false)
+    }
+  }
+
+  // Effect to trigger fetch if default resource exists
+  useEffect(() => {
+    if (defaultResId) {
+      onResourceChange(defaultResId)
+    }
+  }, [defaultResId])
+
+  // Helper to format time
+  const formatTime = (isoString: string) => {
+    try {
+      const d = new Date(isoString)
+      const hours = d.getUTCHours()
+      const minutes = d.getUTCMinutes()
+      const ampm = hours >= 12 ? 'PM' : 'AM'
+      const fHours = hours % 12 || 12
+      const fMinutes = minutes < 10 ? '0' + minutes : minutes
+      return `${fHours}:${fMinutes} ${ampm}`
+    } catch (e) { return "" }
+  }
+
   const selectedResourceId = form.watch("resourceId")
   const selectedResource = resources.find((r) => r.resourceId === selectedResourceId)
 
@@ -89,7 +131,7 @@ export function BookingForm({ resources, userId }: BookingFormProps) {
               <FormItem>
                 <FormLabel>Select Resource</FormLabel>
                 <Select
-                  onValueChange={(val) => field.onChange(Number(val))}
+                  onValueChange={(val) => onResourceChange(Number(val))}
                   defaultValue={field.value?.toString()}
                 >
                   <FormControl>
@@ -105,8 +147,40 @@ export function BookingForm({ resources, userId }: BookingFormProps) {
                     ))}
                   </SelectContent>
                 </Select>
+                {/* Availability Display */}
+                {loadingAvailability ? (
+                  <div className="text-sm text-muted-foreground flex items-center mt-2">
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" /> Checking availability...
+                  </div>
+                ) : availability ? (
+                  <div className="mt-2 p-3 bg-muted/50 rounded-md text-sm">
+                    <p className="font-medium mb-1">Available Hours:</p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                      {["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"].map(day => {
+                        const rules = availability.filter((r: any) => r.dayOfWeek === day)
+                        if (rules.length === 0) return null
+                        return (
+                          <div key={day} className="flex justify-between text-xs">
+                            <span className="text-muted-foreground w-20">{day.charAt(0) + day.slice(1).toLowerCase()}</span>
+                            <span>
+                              {rules.map((r: any, i: number) => (
+                                <span key={i}>{i > 0 && ", "}{formatTime(r.startTime)} - {formatTime(r.endTime)}</span>
+                              ))}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ) : selectedResource && !loadingAvailability ? (
+                  <div className="text-xs text-muted-foreground mt-2">
+                    No specific hours set. Standard availability applies.
+                  </div>
+                ) : null}
+
                 {selectedResource?.requiresApproval && (
-                  <FormDescription className="text-amber-600 font-medium">
+                  <FormDescription className="text-amber-600 font-medium mt-2">
+                    Note: This resource requires admin approval.
                   </FormDescription>
                 )}
                 <FormMessage />
