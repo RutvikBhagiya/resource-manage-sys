@@ -8,24 +8,14 @@ import OrganizationDialog from "./OrganizationDialog"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 
-export default function OrganizationGrid() {
-    const [data, setData] = useState<Organization[]>([])
+interface OrganizationGridProps {
+    initialData?: Organization[]
+}
+
+export default function OrganizationGrid({ initialData = [] }: OrganizationGridProps) {
+    const [data, setData] = useState<Organization[]>(initialData)
     const [search, setSearch] = useState("")
     const [deletingId, setDeletingId] = useState<number | null>(null)
-    const [loading, setLoading] = useState(true)
-
-    useEffect(() => {
-        fetch("/api/super-admin/organizations")
-            .then((res) => res.json())
-            .then((data) => {
-                setData(data)
-                setLoading(false)
-            })
-            .catch((err) => {
-                console.error(err)
-                setLoading(false)
-            })
-    }, [])
 
     const handleDelete = async (id: number) => {
         try {
@@ -51,7 +41,7 @@ export default function OrganizationGrid() {
         org.type.toLowerCase().includes(search.toLowerCase())
     )
 
-    if (loading) return <div>Loading organizations...</div>
+
 
     return (
         <div className="space-y-6">
